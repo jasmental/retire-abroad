@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retirement Tracker — Setup</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0f12;color:#f0f2f5;min-height:100vh;padding:20px}
+.shell{max-width:680px;margin:0 auto;padding:40px 20px}
+.header{text-align:center;margin-bottom:40px}
+.pills{display:flex;justify-content:center;gap:8px;margin-bottom:24px}
+.pill{width:36px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);transition:background .3s}
+.pill.done{background:#22c87a}.pill.active{background:#4f8ef7}
+h1{font-size:26px;font-weight:700;margin-bottom:8px}
+.sub{font-size:14px;color:#8b919e}
+.step{display:none}.step.active{display:block}
+.card{background:#13161b;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4f8ef7;margin-bottom:20px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;color:#8b919e;margin-bottom:6px;font-weight:500}
+.field input,.field select{width:100%;background:#1a1e26;color:#f0f2f5;border:1px solid rgba(255,255,255,.1);padding:11px 14px;border-radius:10px;font-size:14px;outline:none;font-family:inherit;transition:border .15s}
+.field input:focus,.field select:focus{border-color:#4f8ef7}
+.field input::placeholder{color:#3a404d}
+.field input:not(:placeholder-shown){color:#f0f2f5}
+.field .hint{font-size:11px;color:#555d6b;margin-top:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.btn-row{display:flex;gap:12px;justify-content:space-between;margin-top:28px}
+.btn{padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-primary{background:#4f8ef7;color:#fff}.btn-primary:hover{background:#3a7ce0}
+.btn-secondary{background:rgba(255,255,255,.06);color:#8b919e}.btn-secondary:hover{background:rgba(255,255,255,.1)}
+.btn-success{background:#22c87a;color:#fff}.btn-success:hover{background:#1aad68}
+/* Property blocks */
+.prop-block{background:#1a1e26;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;margin-bottom:16px;position:relative}
+.prop-num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#4f8ef7;margin-bottom:16px}
+.btn-remove-prop{position:absolute;top:16px;right:16px;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);border-radius:7px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit}
+.btn-add-prop{width:100%;padding:12px;background:transparent;border:1px dashed rgba(79,142,247,.3);border-radius:12px;color:#4f8ef7;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px}
+.btn-add-prop:hover{background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.5)}
+/* Address autocomplete */
+.addr-wrap{position:relative}
+.addr-sugg{position:absolute;top:100%;left:0;right:0;background:#13161b;border:1px solid rgba(79,142,247,.3);border-top:none;border-radius:0 0 10px 10px;z-index:100;max-height:200px;overflow-y:auto;display:none}
+.addr-sugg.show{display:block}
+.addr-item{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);color:#f0f2f5;line-height:1.4}
+.addr-item:hover{background:rgba(79,142,247,.12)}
+.addr-item:last-child{border:none;border-radius:0 0 10px 10px}
+/* Estimate panel */
+.est-panel{margin-top:10px;background:rgba(34,200,122,.06);border:1px solid rgba(34,200,122,.15);border-radius:10px;padding:13px 15px;display:none}
+.est-panel.show{display:block}
+.est-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.est-row:last-of-type{margin-bottom:10px}
+.est-label{font-size:12px;color:#8b919e}
+.est-val{font-size:13px;font-weight:700;color:#22c87a;font-family:monospace}
+.est-na{color:#555d6b}
+.est-note{font-size:10px;color:#555d6b;margin-bottom:8px}
+.est-btn{width:100%;padding:7px;background:rgba(34,200,122,.12);color:#22c87a;border:1px solid rgba(34,200,122,.2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.est-btn:hover{background:rgba(34,200,122,.2)}
+.est-loading{text-align:center;padding:8px;font-size:12px;color:#555d6b}
+/* Location grid */
+.loc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
+.loc-btn{padding:10px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#8b919e;cursor:pointer;font-family:inherit;font-size:12px;text-align:center;transition:all .15s}
+.loc-btn:hover{border-color:#4f8ef7;color:#4f8ef7}
+.loc-btn.active{border-color:#4f8ef7;background:rgba(79,142,247,.12);color:#4f8ef7;font-weight:600}
+.loc-btn .flag{font-size:18px;display:block;margin-bottom:3px}
+/* Summary */
+.sum-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.sum-row:last-child{border:none;padding-top:12px;font-weight:700;font-size:14px}
+.sum-val{color:#4f8ef7;font-family:monospace}
+/* Overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-size:15px}
+.overlay.show{display:flex}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#4f8ef7;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.row2,.row3{grid-template-columns:1fr}.loc-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay"><div class="spinner"></div><div id="overlayMsg">Saving your profile...</div></div>
+
+<div class="shell">
+  <div class="header">
+    <div class="pills">
+      <div class="pill active" id="p0"></div>
+      <div class="pill" id="p1"></div>
+      <div class="pill" id="p2"></div>
+      <div class="pill" id="p3"></div>
+    </div>
+    <h1 id="stepTitle">Tell us about yourself</h1>
+    <p class="sub" id="stepSub">We'll personalize your retirement projection</p>
+  </div>
+
+  <!-- STEP 1: Personal -->
+  <div class="step active" id="step-0">
+    <div class="card">
+      <div class="card-title">Personal Details</div>
+      <div class="row2">
+        <div class="field"><label>Your first name</label><input type="text" id="s1_name" placeholder="Your first name"></div>
+        <div class="field"><label>Current age</label><input type="number" id="s1_age" placeholder="e.g. 40" min="25" max="65"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Annual salary ($)</label><input type="number" id="s1_salary" placeholder="e.g. 120,000" step="5000"><div class="hint">Your personal gross income</div></div>
+        <div class="field"><label>Family size</label>
+          <select id="s1_family">
+            <option value="1">Just me</option>
+            <option value="2" selected>Me + partner</option>
+            <option value="3">Me + partner + 1 kid</option>
+            <option value="4">Me + partner + 2 kids</option>
+            <option value="5">Me + partner + 3+ kids</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Target retirement age</label><input type="number" id="s1_retire" placeholder="e.g. 57" min="45" max="70"><div class="hint">You can change this anytime</div></div>
+        <div class="field"><label>SS est. benefit at 67 ($)</label><input type="number" id="s1_ss" placeholder="e.g. 2,500" step="50"><div class="hint">Check yours at <a href="https://www.ssa.gov/myaccount" target="_blank" style="color:#4f8ef7">ssa.gov/myaccount</a></div></div>
+      </div>
+    </div>
+    <div class="btn-row"><div></div><button class="btn btn-primary" onclick="nextStep()">Next &rarr;</button></div>
+  </div>
+
+  <!-- STEP 2: Savings -->
+  <div class="step" id="step-1">
+    <div class="card">
+      <div class="card-title">Current Savings & Investments</div>
+      <div class="row2">
+        <div class="field"><label>Cash savings ($)</label><input type="number" id="s2_cash" placeholder="e.g. 50,000" step="1000"><div class="hint">Checking, savings, emergency fund</div></div>
+        <div class="field"><label>Annual cash additions ($)</label><input type="number" id="s2_cash_add" placeholder="e.g. 10,000" step="1000"><div class="hint">How much you save per year</div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>401k / IRA balance ($)</label><input type="number" id="s2_401k" placeholder="e.g. 200,000" step="5000"></div>
+        <div class="field"><label>Annual 401k contribution ($)</label><input type="number" id="s2_401k_add" value="24500" step="500"><div class="hint">2026 max: $24,500</div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Expected 401k return (%)</label><input type="number" id="s2_401k_rate" placeholder="e.g. 7" step="0.5" min="2" max="12"><div class="hint">7% is a moderate assumption</div></div>
+        <div class="field"><label>Cash interest rate (%)</label><input type="number" id="s2_cash_rate" placeholder="e.g. 2.5" step="0.25"><div class="hint">HYSA / money market rate</div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">&larr; Back</button>
+      <button class="btn btn-primary" onclick="nextStep()">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Properties -->
+  <div class="step" id="step-2">
+    <div class="card">
+      <div class="card-title">Your Properties</div>
+      <p style="font-size:13px;color:#8b919e;margin-bottom:18px">Add any properties you own. For each one, type the address and we'll suggest estimated values. All fields editable. Skip if you don't own property.</p>
+      <div id="propsContainer"></div>
+      <button class="btn-add-prop" onclick="addProp()">+ Add property</button>
+      <div style="font-size:11px;color:#555d6b;margin-top:4px;text-align:center">Estimates based on zip-code median data from public records</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">&larr; Back</button>
+      <button class="btn btn-primary" onclick="nextStep()">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Retirement Location -->
+  <div class="step" id="step-3">
+    <div class="card">
+      <div class="card-title">Retirement Destination</div>
+      <p style="font-size:13px;color:#8b919e;margin-bottom:16px">Where are you planning to retire? This sets your cost-of-living baseline.</p>
+      <div class="loc-grid" id="locGrid">
+        <button class="loc-btn active" onclick="setLoc('Spain',this)"><span class="flag">🇪🇸</span>Spain</button>
+        <button class="loc-btn" onclick="setLoc('Portugal',this)"><span class="flag">🇵🇹</span>Portugal</button>
+        <button class="loc-btn" onclick="setLoc('Italy',this)"><span class="flag">🇮🇹</span>Italy</button>
+        <button class="loc-btn" onclick="setLoc('Mexico',this)"><span class="flag">🇲🇽</span>Mexico</button>
+        <button class="loc-btn" onclick="setLoc('Thailand',this)"><span class="flag">🇹🇭</span>Thailand</button>
+        <button class="loc-btn" onclick="setLoc('Greece',this)"><span class="flag">🇬🇷</span>Greece</button>
+        <button class="loc-btn" onclick="setLoc('Colombia',this)"><span class="flag">🇨🇴</span>Colombia</button>
+        <button class="loc-btn" onclick="setLoc('USA',this)"><span class="flag">🇺🇸</span>Stay in USA</button>
+      </div>
+      <div class="row2" style="margin-top:16px">
+        <div class="field"><label>Monthly budget in retirement ($ today)</label>
+          <input type="number" id="s4_budget" placeholder="e.g. 4,000" step="100">
+          <div class="hint">In today's dollars — we'll automatically inflate this to your retirement year. Include housing, food, healthcare, transport, lifestyle.</div>
+        </div>
+        <div class="field"><label>Budget inflation rate (%/yr)</label>
+          <input type="number" id="s4_inflation" placeholder="e.g. 2.5" step="0.25" min="1" max="6">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Review Your Details</div>
+      <div id="summary"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">&larr; Back</button>
+      <button class="btn btn-success" onclick="saveAndLaunch()">Launch my tracker &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://wsasqxocibzxfzkaiucr.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzYXNxeG9jaWJ6eGZ6a2FpdWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MTAzNzMsImV4cCI6MjA5NjI4NjM3M30.UYKM5KbV4oBXyQh0FDEduDPvO5tzLHS2DAh_ZKV_PcA';
+const {createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{flowType:'implicit',detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});
+
+let step=0,retLoc='Spain',props=[],propId=0,currentUser=null;
+const titles=['Tell us about yourself','Your savings & investments','Your properties','Where will you retire?'];
+const subs=['Personalize your retirement projection','Your current financial picture','Add properties you own (optional — you can always update later)','Choose your retirement destination'];
+
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.user){window.location.href='/index.html';return;}
+  currentUser=session.user;
+  // Pre-fill name from Google
+  const gName=session.user.user_metadata?.full_name||'';
+  if(gName){const n=document.getElementById('s1_name');if(n)n.value=gName.split(' ')[0];}
+}
+init();
+
+// Keep the Review Your Details panel live as the user edits values on the final step.
+['s1_name','s1_age','s1_salary','s1_retire','s2_cash','s2_401k','s4_budget','s4_inflation'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('input',refreshSummaryIfVisible);
+});
+
+function showStep(n){
+  document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('active',i===n));
+  ['p0','p1','p2','p3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('done','active');
+    if(i<n)el.classList.add('done');
+    if(i===n)el.classList.add('active');
+  });
+  document.getElementById('stepTitle').textContent=titles[n];
+  document.getElementById('stepSub').textContent=subs[n];
+  step=n;
+  if(n===3){ensureRetirementDefaults();buildSummary();}
+  window.scrollTo(0,0);
+}
+function nextStep(){if(step<3)showStep(step+1);}
+function prevStep(){if(step>0)showStep(step-1);}
+
+const DEFAULT_BUDGETS={Spain:4000,Portugal:3500,Italy:4000,Mexico:2500,Thailand:2000,Greece:3000,Colombia:2200,USA:6000};
+
+function ensureRetirementDefaults(){
+  const budgetEl=document.getElementById('s4_budget');
+  const inflationEl=document.getElementById('s4_inflation');
+  if(budgetEl && !budgetEl.value) budgetEl.value=DEFAULT_BUDGETS[retLoc]||4000;
+  if(inflationEl && !inflationEl.value) inflationEl.value=2.5;
+}
+
+function refreshSummaryIfVisible(){
+  if(step===3) buildSummary();
+}
+
+function setLoc(loc,btn){
+  retLoc=loc;
+  document.querySelectorAll('.loc-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const budgetEl=document.getElementById('s4_budget');
+  if(budgetEl)budgetEl.value=DEFAULT_BUDGETS[loc]||4000;
+  refreshSummaryIfVisible();
+}
+
+// ── Property management ───────────────────────────────────────────────────
+function addProp(){
+  props.push({id:propId++,nickname:'',address:'',value:'',rent:'',loan:'',rate:'',term:30,start:'',piti:'',lat:null,lon:null});
+  renderProps();
+}
+function removeProp(id){props=props.filter(p=>p.id!==id);renderProps();}
+function upd(id,field,val){const p=props.find(x=>x.id===id);if(p)p[field]=val;}
+
+function renderProps(){
+  const c=document.getElementById('propsContainer');
+  if(!props.length){c.innerHTML='';return;}
+  c.innerHTML=props.map((p,i)=>`
+    <div class="prop-block" id="pb-${p.id}">
+      <div class="prop-num">Property ${i+1}</div>
+      <button class="btn-remove-prop" onclick="removeProp(${p.id})">Remove</button>
+      <div class="field"><label>Nickname</label>
+          <input type="text" value="${p.nickname}" placeholder="e.g. Denver House" oninput="upd(${p.id},'nickname',this.value)">
+        </div>
+      <div class="field"><label>Address</label>
+        <div class="addr-wrap">
+          <input type="text" id="ai-${p.id}" value="${p.address}" placeholder="Start typing address..." autocomplete="off"
+            oninput="onAddr(${p.id},this.value)" onblur="setTimeout(()=>hideSugg(${p.id}),200)">
+          <div class="addr-sugg" id="as-${p.id}"></div>
+        </div>
+        <div class="est-panel" id="ep-${p.id}">
+          <div class="est-loading" id="el-${p.id}">Looking up estimates...</div>
+          <div id="ec-${p.id}" style="display:none">
+            <div class="est-row"><span class="est-label">Median home value (zip)</span><span class="est-val" id="ev-${p.id}">--</span></div>
+            <div class="est-row"><span class="est-label">Median monthly rent (zip)</span><span class="est-val" id="er-${p.id}">--</span></div>
+            <div class="est-note">Based on zip-code median data · Source: public records 2023</div>
+            <button class="est-btn" onclick="applyEst(${p.id})">Apply estimates to fields above</button>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Current market value ($)</label>
+          <input type="number" id="val-${p.id}" value="${p.value||''}" step="5000" placeholder="Auto-filled from address above" oninput="upd(${p.id},'value',+this.value)">
+        </div>
+      <div class="field"><label>Est. monthly rent ($)</label>
+        <input type="number" id="rent-${p.id}" value="${p.rent||''}" step="50" placeholder="Auto-filled or enter manually" oninput="upd(${p.id},'rent',+this.value)">
+        <div class="hint">What this property could rent for — even if it's your primary home today</div>
+      </div>
+      <div class="row3">
+        <div class="field"><label>Loan balance ($)</label><input type="number" value="${p.loan||''}" step="1000" placeholder="0 if paid off" oninput="upd(${p.id},'loan',+this.value)"></div>
+        <div class="field"><label>Interest rate (%)</label><input type="number" value="${p.rate||''}" step="0.125" placeholder="e.g. 3.25" oninput="upd(${p.id},'rate',+this.value)"></div>
+        <div class="field"><label>Loan term (yrs)</label><input type="number" value="${p.term||30}" min="5" max="30" oninput="upd(${p.id},'term',+this.value)"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Loan start date</label><input type="month" value="${p.start}" oninput="upd(${p.id},'start',this.value)"><div class="hint">When the mortgage began</div></div>
+        <div class="field"><label>Total monthly payment — PITI ($)</label><input type="number" value="${p.piti||''}" step="50" placeholder="Principal+interest+tax+insurance" oninput="upd(${p.id},'piti',+this.value)"></div>
+      </div>
+    </div>
+  `).join('');
+}
+renderProps();
+
+// ── Address autocomplete (Nominatim — free, no key) ───────────────────────
+const ZIP_DATA={
+  "80211":[743000,2200],"80004":[620000,2100],"80001":[580000,2000],"80002":[560000,1950],
+  "80003":[530000,1900],"80005":[640000,2150],"80007":[700000,2300],"80209":[750000,2500],
+  "80210":[820000,2600],"80206":[680000,2400],"80202":[520000,2100],"80203":[450000,1900],
+  "80204":[480000,1800],"80205":[510000,1950],"80207":[520000,2000],"80212":[620000,2100],
+  "80214":[580000,2000],"80215":[650000,2200],"80218":[590000,2100],"80219":[470000,1700],
+  "80220":[620000,2200],"80221":[480000,1750],"80222":[560000,2000],"80223":[510000,1850],
+  "80224":[550000,1950],"80226":[470000,1750],"80227":[560000,2000],"80228":[620000,2100],
+  "80229":[460000,1700],"80230":[580000,2050],"80231":[540000,1950],"80232":[500000,1800],
+  "80233":[460000,1700],"80234":[490000,1750],"80235":[560000,2000],"80236":[480000,1750],
+  "80237":[520000,1900],"80238":[560000,1950],"80239":[440000,1650],"80246":[680000,2300],
+  "80247":[500000,1850],"80249":[450000,1700],"80260":[420000,1600],"80301":[780000,2600],
+  "80302":[850000,2800],"80303":[820000,2700],"80304":[900000,2900],"80305":[880000,2850],
+  "80521":[520000,1900],"80524":[480000,1800],"80525":[550000,2000],"80526":[510000,1850],
+  "80903":[350000,1500],"80904":[380000,1550],"80906":[420000,1650],"80918":[420000,1650],
+  "80919":[450000,1700],"80920":[480000,1800],"80921":[550000,2000],
+  "78701":[680000,2500],"78702":[620000,2300],"78703":[850000,2800],"78704":[720000,2600],
+  "78741":[450000,1750],"78745":[480000,1800],"78748":[460000,1750],"78750":[580000,2100],
+  "75201":[620000,2400],"75205":[750000,2600],"75206":[520000,1950],"75225":[820000,2700],
+  "75230":[750000,2500],"75248":[620000,2200],"75252":[580000,2100],
+  "77002":[520000,2000],"77005":[680000,2400],"77006":[550000,2000],"77007":[580000,2100],
+  "77019":[750000,2600],"77024":[820000,2700],"77027":[680000,2400],"77056":[620000,2300],
+  "85013":[450000,1750],"85014":[480000,1800],"85016":[520000,1950],"85018":[650000,2300],
+  "85022":[460000,1750],"85028":[580000,2100],"85032":[500000,1900],"85044":[450000,1750],
+  "85048":[520000,1950],"85050":[560000,2000],"85083":[520000,1950],"85085":[540000,1970],
+  "89101":[320000,1400],"89117":[450000,1750],"89128":[420000,1650],"89129":[450000,1750],
+  "89134":[500000,1900],"89135":[650000,2300],"89138":[520000,1950],"89144":[580000,2100],
+  "90024":[1800000,4500],"90025":[1200000,3500],"90026":[980000,3200],"90027":[1100000,3400],
+  "90034":[980000,3200],"90035":[1100000,3400],"90036":[1000000,3300],"90046":[1200000,3500],
+  "90048":[1300000,3700],"90049":[2500000,5500],"90064":[1300000,3700],"90066":[1400000,3900],
+  "90069":[2000000,5000],"90077":[3000000,6500],
+  "94102":[950000,3200],"94103":[1100000,3500],"94105":[1400000,4000],"94107":[1300000,3800],
+  "94110":[1100000,3500],"94114":[1800000,4500],"94115":[1600000,4200],"94117":[1500000,4100],
+  "94118":[1700000,4400],"94123":[2000000,5000],"94133":[1300000,3800],
+  "98101":[680000,2400],"98102":[780000,2700],"98103":[820000,2800],"98105":[900000,3000],
+  "98107":[820000,2800],"98109":[980000,3200],"98112":[1200000,3700],"98115":[900000,3000],
+  "98116":[850000,2900],"98117":[820000,2800],"98119":[1100000,3500],"98122":[780000,2700],
+  "10001":[1200000,4000],"10003":[1800000,5000],"10011":[1800000,5000],"10012":[2000000,5500],
+  "10013":[2200000,6000],"10014":[2500000,6500],"10021":[2000000,5500],"10023":[1800000,5000],
+  "10024":[1700000,4800],"10036":[1500000,4500],
+  "60610":[750000,2600],"60611":[820000,2800],"60614":[850000,2900],"60622":[680000,2400],
+  "60625":[480000,1800],"60640":[450000,1750],"60647":[580000,2100],"60657":[680000,2400],
+  "60654":[750000,2600],"60661":[620000,2200],
+  "33109":[2500000,6000],"33129":[680000,2400],"33131":[650000,2300],"33133":[820000,2800],
+  "33134":[750000,2600],"33139":[650000,2300],"33140":[750000,2600],"33143":[850000,2900],
+  "33146":[980000,3200],"33149":[1200000,3700],"33154":[1500000,4200],"33156":[1100000,3500],
+  "46201":[180000,1100],"46204":[280000,1300],"46205":[220000,1200],"46220":[280000,1300],
+  "46240":[300000,1380],"46250":[300000,1380],"46256":[300000,1380],"46260":[280000,1300],
+  "46268":[270000,1280],"46280":[380000,1550],
+  "64101":[200000,1150],"64108":[280000,1300],"64111":[280000,1300],"64112":[380000,1550],
+  "64113":[350000,1450],"64114":[280000,1300],"64145":[280000,1300],"64150":[350000,1450],
+  "64151":[280000,1300],"64152":[350000,1450],"64157":[320000,1400],"64158":[350000,1450],
+};
+
+let addrTimers={},propEsts={};
+
+async function onAddr(id,val){
+  upd(id,'address',val);
+  clearTimeout(addrTimers[id]);
+  const sugg=document.getElementById('as-'+id);
+  if(!val||val.length<4){if(sugg)sugg.classList.remove('show');return;}
+  addrTimers[id]=setTimeout(async()=>{
+    try{
+      const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=5&addressdetails=1&q='+encodeURIComponent(val),
+        {headers:{'Accept-Language':'en','User-Agent':'RetirementTracker/1.0'}});
+      const data=await r.json();
+      if(!sugg)return;
+      if(!data.length){sugg.classList.remove('show');return;}
+      sugg.innerHTML=data.map(d=>{
+        const parts=d.display_name.split(',').slice(0,4).join(',').trim();
+        return `<div class="addr-item" onmousedown="selectAddr(${id},'${parts.replace(/'/g,"\\'")}',${d.lat},${d.lon})">${parts}</div>`;
+      }).join('');
+      sugg.classList.add('show');
+    }catch(e){console.log('Autocomplete:',e);}
+  },500);
+}
+
+function hideSugg(id){const el=document.getElementById('as-'+id);if(el)el.classList.remove('show');}
+
+async function selectAddr(id,address,lat,lon){
+  upd(id,'address',address);
+  upd(id,'lat',lat);
+  upd(id,'lon',lon);
+  const inp=document.getElementById('ai-'+id);
+  if(inp)inp.value=address;
+  hideSugg(id);
+  // Show loading
+  const panel=document.getElementById('ep-'+id);
+  const loading=document.getElementById('el-'+id);
+  const content=document.getElementById('ec-'+id);
+  if(panel)panel.classList.add('show');
+  if(loading)loading.style.display='block';
+  if(content)content.style.display='none';
+  try{
+    // Get zip from reverse geocode
+    const rev=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+      {headers:{'Accept-Language':'en','User-Agent':'RetirementTracker/1.0'}});
+    const revData=await rev.json();
+    const zip=(revData.address?.postcode||'').split('-')[0].trim();
+    let medVal=null,medRent=null;
+    // Look up in our embedded zip data
+    if(zip&&ZIP_DATA[zip]){
+      medVal=ZIP_DATA[zip][0];
+      medRent=ZIP_DATA[zip][1];
+    }
+    propEsts[id]={value:medVal,rent:medRent,zip};
+    if(loading)loading.style.display='none';
+    if(content)content.style.display='block';
+    const ve=document.getElementById('ev-'+id);
+    const re=document.getElementById('er-'+id);
+    if(ve)ve.textContent=medVal?'$'+medVal.toLocaleString():'Not in database';
+    if(re)re.textContent=medRent?'$'+medRent.toLocaleString()+'/mo':'Not in database';
+    if(ve&&!medVal)ve.className='est-val est-na';
+    if(re&&!medRent)re.className='est-val est-na';
+  }catch(e){
+    if(loading)loading.textContent='Could not fetch — enter values manually';
+  }
+}
+
+function applyEst(id){
+  const est=propEsts[id];
+  if(!est)return;
+  const p=props.find(x=>x.id===id);
+  if(!p)return;
+  if(est.value){p.value=est.value;const ve=document.getElementById('val-'+id);if(ve)ve.value=est.value;}
+  if(est.rent){p.rent=est.rent;const re=document.getElementById('rent-'+id);if(re)re.value=est.rent;}
+  const btn=document.querySelector(`#ep-${id} .est-btn`);
+  if(btn){btn.textContent='✓ Applied!';btn.style.background='rgba(34,200,122,.3)';setTimeout(()=>{btn.textContent='Apply estimates to fields above';btn.style.background='';},2000);}
+}
+
+function buildSummary(){
+  ensureRetirementDefaults();
+  const name=document.getElementById('s1_name').value||'You';
+  const age=document.getElementById('s1_age').value;
+  const salary=+document.getElementById('s1_salary').value;
+  const retire=document.getElementById('s1_retire').value;
+  const cash=+document.getElementById('s2_cash').value;
+  const k401=+document.getElementById('s2_401k').value;
+  const budget=+document.getElementById('s4_budget').value;
+  const rows=[
+    ['Name',name],['Age',age],['Salary','$'+salary.toLocaleString()+'/yr'],
+    ['Target retire age',retire],['Cash','$'+cash.toLocaleString()],
+    ['401k','$'+k401.toLocaleString()],
+    ['Properties',props.length>0?props.length+' added':'None'],
+    ['Retire to',retLoc],['Monthly budget','$'+budget.toLocaleString()+'/mo'],
+  ];
+  document.getElementById('summary').innerHTML=rows.map(([k,v])=>
+    `<div class="sum-row"><span>${k}</span><span class="sum-val">${v}</span></div>`
+  ).join('');
+}
+
+async function saveAndLaunch(){
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('overlayMsg').textContent='Saving your profile...';
+  try{
+    const uid=currentUser.id;
+    const settings={
+      user_id:uid,
+      current_age:+document.getElementById('s1_age').value,
+      retire_age:+document.getElementById('s1_retire').value,
+      current_salary:+document.getElementById('s1_salary').value,
+      family_size:+document.getElementById('s1_family').value,
+      cash_balance:+document.getElementById('s2_cash').value,
+      k401_balance:+document.getElementById('s2_401k').value,
+      rate_401k:+document.getElementById('s2_401k_rate').value,
+      annual_401k_add:+document.getElementById('s2_401k_add').value,
+      months_rented:11,
+      spain_budget:+document.getElementById('s4_budget').value,
+      spain_inflation:+document.getElementById('s4_inflation').value,
+      retirement_location:retLoc,
+      ss_draw_age:67,
+      ss_base_67:+document.getElementById('s1_ss').value,
+      mgr_fee:9,app_rate:3.5,rent_growth:3,
+      updated_at:new Date().toISOString()
+    };
+    const {error:se}=await sb.from('user_settings').upsert(settings,{onConflict:'user_id'});
+    if(se)throw se;
+    if(props.length>0){
+      document.getElementById('overlayMsg').textContent='Saving properties...';
+      await sb.from('user_properties').delete().eq('user_id',uid);
+      const toSave=props.map((p,i)=>{
+        const mr=(p.rate/100)/12,n=(p.term||30)*12;
+        const pi=p.loan>0&&p.rate>0?Math.round(p.loan*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1)):0;
+        return{
+          user_id:uid,
+          nickname:p.nickname||'Property '+(i+1),
+          address:p.address,
+          property_type:'property',
+          current_value:p.value||0,
+          loan_balance:p.loan||0,
+          interest_rate:p.rate||0,
+          loan_term_years:p.term||30,
+          loan_start_date:p.start?p.start+'-01':null,
+          monthly_pi:pi,
+          monthly_piti:p.piti||pi,
+          gross_rent:p.rent||0,
+          mgmt_fee:9,
+          sort_order:i
+        };
+      });
+      const {error:pe}=await sb.from('user_properties').insert(toSave);
+      if(pe)throw pe;
+    }
+    document.getElementById('overlayMsg').textContent='Setting up your account...';
+    await sb.from('user_profiles').update({
+      intake_completed:true,
+      full_name:document.getElementById('s1_name').value,
+      updated_at:new Date().toISOString()
+    }).eq('id',uid);
+    window.location.href='/app.html';
+  }catch(err){
+    document.getElementById('overlay').classList.remove('show');
+    alert('Error saving: '+err.message+'\n\nPlease try again.');
+  }
+}
+</script>
+</body>
+</html>
