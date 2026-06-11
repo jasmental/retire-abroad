@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retirement Tracker — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0f12;color:#f0f2f5;min-height:100vh;padding:20px}
+.shell{max-width:700px;margin:0 auto;padding:40px 20px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px}
+h1{font-size:22px;font-weight:700}
+.back{color:#4f8ef7;font-size:13px;text-decoration:none}
+.card{background:#13161b;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#4f8ef7;margin-bottom:18px}
+.user-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.user-row:last-child{border:none}
+.user-info{display:flex;align-items:center;gap:12px}
+.avatar{width:36px;height:36px;border-radius:50%;background:#222731;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#4f8ef7;flex-shrink:0}
+.user-email{font-size:13px;color:#f0f2f5}
+.user-meta{font-size:11px;color:#555d6b;margin-top:2px}
+.badge-admin{background:rgba(79,142,247,.15);color:#4f8ef7;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;margin-left:8px}
+.badge-pending{background:rgba(245,158,11,.12);color:#f59e0b;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+.btn-remove{padding:5px 12px;border-radius:7px;font-size:11px;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);cursor:pointer;font-family:inherit}
+.btn-remove:hover{background:rgba(248,113,113,.2)}
+.add-row{display:flex;gap:10px;margin-top:16px}
+.add-row input{flex:1;background:#1a1e26;color:#f0f2f5;border:1px solid rgba(255,255,255,.1);padding:10px 14px;border-radius:10px;font-size:13px;outline:none;font-family:inherit}
+.add-row input:focus{border-color:#4f8ef7}
+.btn-add{padding:10px 20px;background:#4f8ef7;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-add:hover{background:#3a7ce0}
+.msg{font-size:12px;margin-top:10px;padding:8px 12px;border-radius:8px;display:none}
+.msg.ok{background:rgba(34,200,122,.1);color:#22c87a;border:1px solid rgba(34,200,122,.2);display:block}
+.msg.err{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);display:block}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat{background:#13161b;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;text-align:center}
+.stat-val{font-size:28px;font-weight:700;color:#4f8ef7;font-family:'DM Mono',monospace}
+.stat-lbl{font-size:11px;color:#8b919e;margin-top:4px}
+.sign-out{padding:8px 16px;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <div>
+      <a href="/app.html" class="back">← Back to tracker</a>
+      <h1 style="margin-top:4px">Admin Panel</h1>
+    </div>
+    <button class="sign-out" onclick="signOut()">Sign out</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-val" id="statAllowed">-</div><div class="stat-lbl">Allowed users</div></div>
+    <div class="stat"><div class="stat-val" id="statActive">-</div><div class="stat-lbl">Completed setup</div></div>
+    <div class="stat"><div class="stat-val" id="statPending">-</div><div class="stat-lbl">Pending</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Manage Access</div>
+    <div id="userList"><div style="color:#555d6b;font-size:13px">Loading...</div></div>
+    <div class="add-row" style="margin-top:20px">
+      <input type="email" id="newEmail" placeholder="friend@gmail.com" onkeydown="if(event.key==='Enter')addUser()">
+      <input type="text" id="newName" placeholder="Their name (optional)" style="max-width:180px">
+      <button class="btn-add" onclick="addUser()">+ Add</button>
+    </div>
+    <div class="msg" id="addMsg"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://wsasqxocibzxfzkaiucr.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzYXNxeG9jaWJ6eGZ6a2FpdWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MTAzNzMsImV4cCI6MjA5NjI4NjM3M30.UYKM5KbV4oBXyQh0FDEduDPvO5tzLHS2DAh_ZKV_PcA';
+const {createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+let users=[];
+
+async function init(){
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){window.location.href='/index.html';return;}
+  const {data:profile}=await sb.from('user_profiles').select('is_admin').eq('id',user.id).single();
+  if(!profile?.is_admin){window.location.href='/app.html';return;}
+  loadUsers();
+}
+
+async function loadUsers(){
+  const {data:allowed}=await sb.from('allowed_users').select('*').order('created_at');
+  const {data:profiles}=await sb.from('user_profiles').select('email,intake_completed');
+  users=allowed||[];
+  const profileMap={};
+  (profiles||[]).forEach(p=>profileMap[p.email]=p);
+  const completed=(profiles||[]).filter(p=>p.intake_completed).length;
+  document.getElementById('statAllowed').textContent=users.length;
+  document.getElementById('statActive').textContent=completed;
+  document.getElementById('statPending').textContent=users.length-completed;
+  document.getElementById('userList').innerHTML=users.map(u=>{
+    const profile=profileMap[u.email];
+    const status=profile?.intake_completed?'<span style="color:var(--green,#22c87a);font-size:11px">✓ Active</span>':'<span class="badge-pending">Pending login</span>';
+    return`<div class="user-row">
+      <div class="user-info">
+        <div class="avatar">${(u.name||u.email)[0].toUpperCase()}</div>
+        <div>
+          <div class="user-email">${u.name||''} ${u.is_admin?'<span class="badge-admin">ADMIN</span>':''}</div>
+          <div class="user-meta">${u.email} &nbsp;&middot;&nbsp; ${status}</div>
+        </div>
+      </div>
+      ${u.is_admin?'':'<button class="btn-remove" onclick="removeUser(\''+u.email+'\')">Remove</button>'}
+    </div>`;
+  }).join('');
+}
+
+async function addUser(){
+  const email=document.getElementById('newEmail').value.trim().toLowerCase();
+  const name=document.getElementById('newName').value.trim();
+  const msg=document.getElementById('addMsg');
+  msg.className='msg';
+  if(!email||!email.includes('@')){msg.textContent='Please enter a valid email';msg.className='msg err';return;}
+  const {error}=await sb.from('allowed_users').insert({email,name:name||null,is_admin:false});
+  if(error){msg.textContent=error.message.includes('duplicate')?'That email is already on the list':error.message;msg.className='msg err';}
+  else{msg.textContent=name?name+' ('+email+') added successfully!':email+' added!';msg.className='msg ok';document.getElementById('newEmail').value='';document.getElementById('newName').value='';loadUsers();}
+}
+
+async function removeUser(email){
+  if(!confirm('Remove '+email+' from the access list?'))return;
+  await sb.from('allowed_users').delete().eq('email',email);
+  loadUsers();
+}
+
+async function signOut(){await sb.auth.signOut();window.location.href='/index.html';}
+init();
+</script>
+</body>
+</html>

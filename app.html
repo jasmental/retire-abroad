@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Retirement Wealth Tracker · Jas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="dark"]{--bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e26;--bg4:#222731;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#f0f2f5;--text2:#8b919e;--text3:#555d6b;--accent:#4f8ef7;--green:#22c87a;--amber:#f59e0b;--red:#f87171;--teal:#2dd4bf;--purple:#a78bfa;--gc:rgba(255,255,255,.04);--tc:#555d6b;--pa:rgba(79,142,247,.15);--shadow:0 4px 24px rgba(0,0,0,.4)}
+:root[data-theme="light"]{--bg:#f4f5f7;--bg2:#fff;--bg3:#eef0f4;--bg4:#e4e7ed;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.14);--text:#111827;--text2:#6b7280;--text3:#9ca3af;--accent:#2563eb;--green:#16a34a;--amber:#d97706;--red:#dc2626;--teal:#0d9488;--purple:#7c3aed;--gc:rgba(0,0,0,.04);--tc:#9ca3af;--pa:rgba(37,99,235,.1);--shadow:0 4px 24px rgba(0,0,0,.08)}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;transition:background .2s,color .2s}
+.shell{display:flex;flex-direction:column;min-height:100vh}
+.header{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
+.hdr-l{display:flex;align-items:center;gap:10px}.logo{display:flex;align-items:center;gap:9px}
+.logo-i{width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:700}
+.logo-t{font-size:14px;font-weight:600}.logo-s{font-size:11px;color:var(--text2);margin-top:-2px}
+.hdr-r{display:flex;align-items:center;gap:7px}
+.hbtn{width:33px;height:33px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text2);transition:all .15s;flex-shrink:0}
+.hbtn:hover{background:var(--bg4);color:var(--text)}
+.lbadge{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;white-space:nowrap}
+.main{display:flex;flex:1;overflow:hidden}
+.sb{width:200px;min-width:200px;background:var(--bg2);border-right:1px solid var(--border);padding:14px 10px;display:flex;flex-direction:column;gap:2px;transition:width .25s,min-width .25s,padding .25s;overflow:hidden;position:relative}
+.sb.col{width:52px;min-width:52px;padding:14px 6px}
+.sb-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
+.ns{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3);padding:8px 10px 4px;text-transform:uppercase;white-space:nowrap;transition:opacity .2s}
+.sb.col .ns{opacity:0;pointer-events:none}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.ni:hover{background:var(--bg3);color:var(--text)}.ni.active{background:var(--pa);color:var(--accent);font-weight:500}
+.ni-ic{font-size:15px;width:20px;text-align:center;flex-shrink:0}.ni-lb{transition:opacity .2s}
+.sb.col .ni-lb{opacity:0;width:0;overflow:hidden}
+.sb-ft{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);line-height:1.6;transition:opacity .2s}
+.sb.col .sb-ft{opacity:0;pointer-events:none}
+.cb{position:absolute;top:14px;right:-13px;width:28px;height:28px;border-radius:50%;background:var(--accent,#4f8ef7);border:2px solid var(--bg,#0d0f12);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;z-index:20;transition:transform .25s;box-shadow:0 2px 8px rgba(0,0,0,.4)}.cb:hover{filter:brightness(1.15)}
+.sb.col .cb{transform:rotate(180deg)}
+.cnt{flex:1;padding:18px 22px;overflow-y:auto;min-width:0}
+.cbar{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.ctrl{display:flex;flex-direction:column;gap:4px}
+.cl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.cd{font-size:16px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+.cd small{font-size:11px;font-weight:400;color:var(--text2);font-family:'DM Sans',sans-serif}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:var(--bg4);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg2);box-shadow:0 0 0 2px var(--accent)}
+select,input[type=number]{background:var(--bg3);color:var(--text);border:1px solid var(--border2);padding:6px 8px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;width:100%;outline:none;cursor:pointer}
+select:focus,input[type=number]:focus{border-color:var(--accent)}
+input[type=number]{font-family:'DM Mono',monospace}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-bottom:16px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);border-radius:12px 12px 0 0}
+.metric.g::before{background:var(--green)}.metric.a::before{background:var(--amber)}.metric.r::before{background:var(--red)}.metric.p::before{background:var(--purple)}.metric.t::before{background:var(--teal)}
+.ml{font-size:10px;color:var(--text2);margin-bottom:3px}.mv{font-size:19px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+.mv.g{color:var(--green)}.mv.a{color:var(--amber)}.mv.r{color:var(--red)}.ms{font-size:10px;color:var(--text3);margin-top:2px}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:13px}
+.pt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:12px}
+.pg{display:grid;gap:13px}.pg2{grid-template-columns:1fr 1fr}.pg3{grid-template-columns:1fr 1fr 1fr}
+.cw{position:relative;width:100%}
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.ldash{width:16px;height:2px;border-top:2px dashed;flex-shrink:0}
+.tw{overflow-x:auto}
+.tw table{border-collapse:separate;border-spacing:0;width:100%}
+.tw th:nth-child(1),.tw td:nth-child(1),.tw th:nth-child(2),.tw td:nth-child(2){position:sticky;background:var(--bg2);z-index:2}
+.tw th:nth-child(1),.tw td:nth-child(1){left:0;min-width:50px}
+.tw th:nth-child(2),.tw td:nth-child(2){left:50px;min-width:42px;border-right:1px solid var(--border2)}
+.tw th:nth-child(1),.tw th:nth-child(2){z-index:3;background:var(--bg2)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:6px 9px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);border-bottom:1px solid var(--border2);white-space:nowrap}
+td{padding:5px 9px;border-bottom:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.rr td{background:var(--pa)}
+tr.rr td:first-child{border-left:2px solid var(--accent)}
+.tp{color:var(--green)}.tn{color:var(--red)}.ta{color:var(--amber)}.tm{color:var(--text3);font-family:'DM Sans',sans-serif;font-size:10px}
+.badge{display:inline-block;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:600}
+.bb{background:rgba(79,142,247,.15);color:var(--accent)}.bg{background:rgba(34,200,122,.12);color:var(--green)}.ba{background:rgba(245,158,11,.15);color:var(--amber)}.br{background:rgba(248,113,113,.12);color:var(--red)}
+.nb{border-left:3px solid var(--amber);background:rgba(245,158,11,.06);padding:9px 13px;border-radius:0 10px 10px 0;font-size:12px;color:var(--text2);line-height:1.7;margin-top:10px}
+.nb.g{border-color:var(--green);background:rgba(34,200,122,.06)}.nb.b{border-color:var(--accent);background:rgba(79,142,247,.06)}.nb.r{border-color:var(--red);background:rgba(248,113,113,.06)}
+.page{display:none}.page.active{display:block}
+.tg{display:flex;gap:4px;background:var(--bg3);border-radius:8px;padding:4px;margin-bottom:11px}
+.tb{padding:4px 11px;border-radius:6px;font-size:12px;font-weight:500;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .1s}
+.tb.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.pt2{width:100%;font-size:12px}
+.pt2 td{padding:6px 0;border-bottom:1px solid var(--border)}
+.pt2 tr:last-child td{border:none}
+.pt2 .k{color:var(--text2)}.pt2 .v{text-align:right;font-weight:500;font-family:'DM Mono',monospace}
+.igrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:7px;margin-bottom:12px}
+.ic{background:var(--bg3);border-radius:10px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center}
+.ic .lb{font-size:12px;color:var(--text2)}.ic .am{font-size:13px;font-weight:600;color:var(--green);font-family:'DM Mono',monospace}
+.ic .am.mt{color:var(--text3)}
+.pdp{border-radius:14px;border:1px solid var(--border);background:var(--bg2);padding:16px;margin-bottom:13px}
+.pdpt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:11px}
+.pdlist{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
+.pdrow{background:var(--bg3);border-radius:10px;padding:9px 13px;border:1px solid transparent;margin-bottom:7px}
+.pdrm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;font-family:monospace}
+.pdrm:hover{color:var(--red)}
+.pdadd{background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;padding:7px 13px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:all .15s}
+.pdadd:hover{background:var(--bg4);color:var(--text)}
+.pdrb{display:flex;align-items:center;gap:9px;margin-top:9px;padding:9px 13px;border-radius:10px;background:rgba(34,200,122,.07);border:1px solid rgba(34,200,122,.18);flex-wrap:wrap}
+.prv{font-size:12px;font-weight:600;font-family:monospace;color:var(--green)}.prv.mt{color:var(--text3);font-weight:400}
+.prl{font-size:11px;color:var(--text2)}
+.pofb{padding:3px 9px;font-size:11px;border-radius:6px;border:1px solid var(--green);color:var(--green);background:rgba(34,200,122,.08);cursor:pointer;font-family:inherit;white-space:nowrap}
+.scgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px}
+.scc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px;cursor:pointer;transition:all .15s}
+.scc:hover{border-color:var(--accent)}.scc.active{border-color:var(--accent);background:var(--pa)}
+.sc-age{font-size:24px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace}
+.sc-yr{font-size:11px;color:var(--text2);margin-bottom:9px}
+.sc-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)}
+.sc-row:last-child{border:none}.sk{color:var(--text2)}.sv{font-family:'DM Mono',monospace;font-weight:500}
+.sv.g{color:var(--green)}.sv.a{color:var(--amber)}.sv.rr{color:var(--red)}
+.spbox{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:13px}
+.spdisp{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:10px;padding:13px 16px;margin-top:7px}
+.spval{font-size:26px;font-weight:700;font-family:'DM Mono',monospace}
+.spval.pos{color:var(--green)}.spval.neg{color:var(--red)}
+.via{border-radius:14px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.via.ok{background:rgba(34,200,122,.08);border:1px solid rgba(34,200,122,.25)}
+.via.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25)}
+.via.bad{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25)}
+.via-icon{font-size:28px;flex-shrink:0;margin-top:2px}
+.via-title{font-size:15px;font-weight:700}
+.via-sub{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.7}
+.mc-bar{height:22px;border-radius:6px;background:var(--bg4);overflow:hidden;margin-bottom:6px;position:relative}
+.mc-fill{height:100%;border-radius:6px;transition:width .5s}
+.mc-label{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:#fff}
+.sens-table{width:100%;border-collapse:collapse;font-size:12px}
+.sens-table th{background:var(--bg3);padding:7px 10px;font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)}
+.sens-table td{padding:7px 10px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace}
+.sens-table tr:last-child td{border:none}
+.timeline{position:relative;padding:8px 0 8px 20px;margin-top:8px}
+.timeline::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--border2);border-radius:2px}
+.tl-item{position:relative;margin-bottom:18px;padding-left:20px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg2);flex-shrink:0}
+.tl-yr{font-size:11px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent)}
+.tl-title{font-size:13px;font-weight:600;color:var(--text)}
+.tl-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.tl-income{font-size:12px;font-weight:600;color:var(--green);margin-top:3px;font-family:'DM Mono',monospace}
+.buy-toggle-box{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;background:var(--bg3);border-radius:12px;padding:12px 16px;border:2px solid var(--border2);transition:border-color .2s}
+.buy-toggle-box.on{border-color:var(--green)}
+.buy-tog-btn{display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:8px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;background:var(--bg4);color:var(--text3)}
+.buy-tog-btn.on{background:rgba(34,200,122,.15);color:var(--green)}
+.tax-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.tax-row:last-child{border:none}
+.adv-sec{margin-bottom:20px}
+.adv-sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.adv-body{background:var(--bg3);border-radius:10px;padding:14px 16px;line-height:1.9;font-size:13px;color:var(--text2)}
+.adv-body ul{padding-left:16px;margin:6px 0}
+.adv-body li{margin-bottom:5px}
+.wm{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-top:1px solid var(--border);margin-top:18px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+@media(max-width:768px){
+  .sb{position:fixed;top:0;left:-220px;height:100vh;z-index:300;width:220px;min-width:220px;transition:left .25s;padding-top:56px;box-shadow:var(--shadow)}
+  .sb.mob-open{left:0}.sb-ov{display:block}.cb{display:none}
+  .cnt{padding:12px}.pg2,.pg3{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}
+  .scgrid{grid-template-columns:1fr}.cgrid{grid-template-columns:1fr 1fr}
+  .lbadge,.logo-s{display:none}.cw canvas{max-height:190px}.igrid{grid-template-columns:1fr}}
+@media(min-width:769px){.sb-ov,.mob-mb{display:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="header">
+  <div class="hdr-l">
+    <button class="hbtn mob-mb" onclick="toggleMob()">&#9776;</button>
+    <div class="logo"><div class="logo-i" id="userAvatarFallback" style="padding:0;overflow:hidden;background:linear-gradient(135deg,#1a2744,#0d1829)">
+        <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
+          <text x="6" y="25" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="white">R</text>
+          <ellipse cx="26" cy="24" rx="5" ry="3.5" fill="#2dd4bf" transform="rotate(-30 26 24)"/>
+        </svg>
+      </div>
+      <img id="userAvatar" style="display:none;width:30px;height:30px;border-radius:8px;object-fit:cover;flex-shrink:0">
+      <div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="font-size:15px;font-weight:700;letter-spacing:-.01em" id="userDisplayName">Retirement Tracker</div>
+        </div>
+        <div class="logo-s" id="userSubtitle">Loading...</div>
+      </div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="lbadge" id="lbadge">Age 57 &middot; 2039</div>
+    <button class="hbtn" onclick="toggleTheme()" id="themeBtn">&#127769;</button>
+    <div id="userMenuWrap" style="position:relative">
+      <button class="hbtn" onclick="toggleUserMenu()" title="Account" style="font-size:16px">&#9776;</button>
+      <div id="userMenu" style="display:none;position:absolute;right:0;top:38px;background:var(--bg2,#1a1d24);border:1px solid var(--bd,#2a2f3a);border-radius:10px;padding:6px;min-width:180px;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+        <a href="/profile.html" style="display:block;padding:9px 12px;color:var(--text,#e8eaed);text-decoration:none;border-radius:7px;font-size:14px" onmouseover="this.style.background='var(--bg3,#252932)'" onmouseout="this.style.background='transparent'">&#9881;&#65039;&nbsp; Profile &amp; settings</a>
+        <a href="#" onclick="redoIntake();return false" style="display:block;padding:9px 12px;color:var(--text,#e8eaed);text-decoration:none;border-radius:7px;font-size:14px" onmouseover="this.style.background='var(--bg3,#252932)'" onmouseout="this.style.background='transparent'">&#128260;&nbsp; Redo setup / properties</a>
+        <a id="adminLink" href="/admin.html" style="display:none;padding:9px 12px;color:var(--text,#e8eaed);text-decoration:none;border-radius:7px;font-size:14px" onmouseover="this.style.background='var(--bg3,#252932)'" onmouseout="this.style.background='transparent'">&#128100;&nbsp; Admin panel</a>
+        <div style="height:1px;background:var(--bd,#2a2f3a);margin:5px 8px"></div>
+        <button onclick="signOut()" style="display:block;width:100%;text-align:left;padding:9px 12px;color:#f87171;background:transparent;border:none;border-radius:7px;font-size:14px;cursor:pointer" onmouseover="this.style.background='rgba(248,113,113,.12)'" onmouseout="this.style.background='transparent'">&#8617;&nbsp; Sign out</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="main">
+<div class="sb-ov" id="sbov" onclick="toggleMob()"></div>
+<div class="sb" id="sb">
+  <button class="cb" onclick="toggleSB()">&#9664;</button>
+  <div class="ns">Views</div>
+  <button class="ni active" onclick="nav('overview',this)"><span class="ni-ic">&#9672;</span><span class="ni-lb">Overview</span></button>
+  <button class="ni" onclick="nav('viability',this)"><span class="ni-ic">&#10003;</span><span class="ni-lb">Can I Retire?</span></button>
+  <button class="ni" onclick="nav('compare',this)"><span class="ni-ic">&#8651;</span><span class="ni-lb">Compare</span></button>
+  <button class="ni" onclick="nav('income',this)"><span class="ni-ic">&#8383;</span><span class="ni-lb">Income</span></button>
+  <button class="ni" onclick="nav('homes',this)"><span class="ni-ic">&#8962;</span><span class="ni-lb">Properties</span></button>
+  <button class="ni" onclick="nav('prop3',this)"><span class="ni-ic">&#127963;</span><span class="ni-lb" id="locationNavLabel">Spain Property</span></button>
+  <button class="ni" onclick="nav('stress',this)"><span class="ni-ic">&#9889;</span><span class="ni-lb">Stress Test</span></button>
+  <button class="ni" onclick="nav('sensitivity',this)"><span class="ni-ic">&#9878;</span><span class="ni-lb">Sensitivity</span></button>
+  <button class="ni" onclick="nav('milestones',this)"><span class="ni-ic">&#9711;</span><span class="ni-lb">Milestones</span></button>
+  <button class="ni" onclick="nav('paydown',this)"><span class="ni-ic">&#8595;</span><span class="ni-lb">Paydown</span></button>
+  <button class="ni" onclick="nav('tax',this)"><span class="ni-ic">&#37;</span><span class="ni-lb">Tax &amp; Runway</span></button>
+  <button class="ni" onclick="nav('table',this)"><span class="ni-ic">&#8801;</span><span class="ni-lb">Year Table</span></button>
+  <button class="ni" onclick="nav('advisor',this)"><span class="ni-ic">&#9733;</span><span class="ni-lb">AI Advisor</span></button>
+  <div class="sb-ft">Estimates only. Consult a financial advisor.</div>
+</div>
+<div class="cnt">
+  <!-- CONTROLS -->
+  <div class="cbar"><div class="cgrid">
+    <div class="ctrl"><div class="cl">Retire age</div><input type="range" min="45" max="67" value="57" step="1" id="retireAge" oninput="render()"><div class="cd" id="d-ra">57 <small>&middot; 2039</small></div></div>
+    <div class="ctrl"><div class="cl">401k return</div><input type="range" min="4" max="10" value="7" step="0.5" id="rate401k" oninput="render()"><div class="cd" id="d-r4">7.0<small>%/yr</small></div></div>
+    <div class="ctrl"><div class="cl">SS draw age</div><select id="ssAge" onchange="render()"><option value="0">Don't draw</option><option value="62">Age 62 (-30%)</option><option value="67" selected>Age 67 (full)</option><option value="70">Age 70 (+24%)</option></select><div class="cd" style="font-size:12px" id="d-ss">$3,806/mo at 67</div></div>
+    <div class="ctrl"><div class="cl">Home appreciation</div><input type="range" min="1" max="6" value="3.5" step="0.5" id="appRate" oninput="render()"><div class="cd" id="d-ap">3.5<small>%/yr</small></div></div>
+    <div class="ctrl"><div class="cl">Rent growth</div><input type="range" min="1" max="5" value="3" step="0.5" id="rentGrowth" oninput="render()"><div class="cd" id="d-rg">3.0<small>%/yr</small></div></div>
+    <div class="ctrl"><div class="cl">Property mgmt fee %</div><input type="range" min="0" max="12" value="9" step="0.5" id="mgrFee" oninput="render()"><div class="cd" id="d-mf">9<small>%</small></div></div>
+    <div class="ctrl"><div class="cl">Months rented/yr</div><input type="range" min="6" max="12" value="11" step="1" id="moRented" oninput="render()"><div class="cd" id="d-mo">11<small> mo/yr</small></div></div>
+    <div class="ctrl"><div class="cl" id="budgetFieldLabel">Spain budget/mo ($)</div><input type="number" id="spainCost" value="4500" min="0" step="100" oninput="render()"></div>
+    <div class="ctrl"><div class="cl">Spain inflation/yr</div><input type="range" min="1" max="5" value="2.5" step="0.5" id="spainInflation" oninput="render()"><div class="cd" id="d-si">2.5<small>%/yr</small></div></div>
+    <div class="ctrl"><div class="cl">Current salary ($)</div><input type="number" id="curSalary" value="195000" min="0" step="5000" oninput="render()"></div>
+    <div class="ctrl"><div class="cl">Current cash ($)</div><input type="number" id="curCash" value="175000" min="0" step="5000" oninput="render()"></div>
+    <div class="ctrl"><div class="cl">Current 401k ($)</div><input type="number" id="cur401k" value="550000" min="0" step="5000" oninput="render()"></div>
+    <div class="ctrl"><div class="cl">Retirement country</div><select id="destCountry" onchange="changeCountry()" style="padding:7px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:14px;cursor:pointer;width:100%">
+      <option value="Portugal">&#127477;&#127481; Portugal</option>
+      <option value="Spain">&#127466;&#127480; Spain</option>
+      <option value="Mexico">&#127474;&#127485; Mexico</option>
+      <option value="Panama">&#127477;&#127462; Panama</option>
+      <option value="Greece">&#127468;&#127479; Greece</option>
+      <option value="Italy">&#127470;&#127481; Italy</option>
+      <option value="Colombia">&#127464;&#127476; Colombia</option>
+      <option value="Thailand">&#127481;&#127469; Thailand</option>
+      <option value="Netherlands">&#127475;&#127473; Netherlands</option>
+      <option value="Germany">&#127465;&#127466; Germany</option>
+      <option value="Austria">&#127462;&#127481; Austria</option>
+      <option value="Switzerland">&#127464;&#127469; Switzerland</option>
+    </select></div>
+    <div class="ctrl"><div class="cl">Annual 401k contribution ($)</div><input type="number" id="annual401kAdd" value="24500" min="0" step="500" oninput="render()"><div class="cd" id="contrib-note" style="font-size:10px;color:var(--text3)">Escalates to IRS max (+$500/yr)</div></div>
+  </div></div>
+
+  <!-- OVERVIEW -->
+  <div id="page-overview" class="page active">
+    <div id="destCard" style="display:none;margin-bottom:13px;border-radius:14px;overflow:hidden;position:relative;height:120px;background:#13161b;border:1px solid var(--border)">
+    <img id="destImg" src="" style="width:100%;height:100%;object-fit:cover;opacity:.6" alt="">
+    <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.7) 0%,rgba(0,0,0,.2) 100%);display:flex;align-items:center;padding:20px">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5);font-weight:600;margin-bottom:4px">Your destination</div>
+        <div style="font-size:22px;font-weight:800;color:#fff" id="destName">Spain</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px" id="destSubtitle">Your retirement starts here</div>
+      </div>
+    </div>
+  </div>
+  <div class="spbox">
+      <div class="pt" id="budgetPanelTitle">Monthly retirement budget</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px" id="spainInflNote"></div>
+      <div class="spdisp">
+        <div><div style="font-size:11px;color:var(--text2);margin-bottom:3px">Monthly surplus / deficit at retirement</div><div class="spval pos" id="spval">--</div></div>
+        <div style="text-align:right"><div style="font-size:11px;color:var(--text2);margin-bottom:3px">Annual</div><div style="font-size:16px;font-weight:600;font-family:'DM Mono',monospace" id="spannu">--</div></div>
+      </div>
+    </div>
+    <div class="metrics" id="mrow"></div>
+    <div class="panel"><div class="pt">Net worth projection</div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#4f8ef7"></div>401k</div><div class="li"><div class="ld" style="background:#22c87a"></div>Equity</div><div class="li"><div class="ld" style="background:#f59e0b"></div>Cash</div><div class="li"><div class="ldash" style="border-color:#a78bfa"></div>Total NW</div></div>
+      <div class="cw" style="height:250px"><canvas id="nwChart"></canvas></div>
+    </div>
+    <div class="pg pg2">
+      <div class="panel" style="margin-bottom:0"><div class="pt">Monthly income at retirement</div><div id="incSnap"></div></div>
+      <div class="panel" style="margin-bottom:0"><div class="pt">Property snapshot</div><div id="propSnap"></div></div>
+    </div>
+    <div id="k401warn"></div>
+  </div>
+
+  <!-- CAN I RETIRE -->
+  <div id="page-viability" class="page">
+    <div id="viaBanner"></div>
+    <div class="panel"><div class="pt">Earliest viable retirement age</div><div id="viaGrid"></div></div>
+    <div class="panel"><div class="pt">Monthly income vs Spain budget by retirement age</div>
+      <div class="cw" style="height:240px"><canvas id="viaChart"></canvas></div></div>
+    <div class="panel"><div class="pt">Key thresholds</div><div id="viaThresh"></div></div>
+  </div>
+
+  <!-- COMPARE -->
+  <div id="page-compare" class="page">
+    <div class="panel"><div class="pt">Retire at 52 &middot; 57 &middot; 62 &mdash; side by side</div><div class="scgrid" id="scgrid"></div></div>
+    <div class="panel"><div class="pt">Net worth trajectories</div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#f87171"></div>Retire 52</div><div class="li"><div class="ld" style="background:#4f8ef7"></div>Retire 57</div><div class="li"><div class="ld" style="background:#22c87a"></div>Retire 62</div></div>
+      <div class="cw" style="height:240px"><canvas id="cmpNW"></canvas></div></div>
+    <div class="panel"><div class="pt">Monthly income after retirement</div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#f87171"></div>Retire 52</div><div class="li"><div class="ld" style="background:#4f8ef7"></div>Retire 57</div><div class="li"><div class="ld" style="background:#22c87a"></div>Retire 62</div></div>
+      <div class="cw" style="height:240px"><canvas id="cmpInc"></canvas></div></div>
+  </div>
+
+  <!-- INCOME -->
+  <div id="page-income" class="page">
+    <div class="panel"><div class="pt">Income breakdown at retirement</div><div class="igrid" id="incGrid"></div><div id="incTotal"></div><div class="nb" id="ssNote"></div><div class="nb b" style="margin-top:7px" id="vacNote"></div></div>
+    <div class="panel"><div class="pt">Monthly income over time (stacked)</div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#22c87a"></div>Denver</div><div class="li"><div class="ld" style="background:#4f8ef7"></div>Devinney</div><div class="li"><div class="ld" style="background:#f59e0b"></div>401k draw</div><div class="li"><div class="ld" style="background:#f87171"></div>SS</div></div>
+      <div class="cw" style="height:240px"><canvas id="incChart"></canvas></div></div>
+  </div>
+
+  <!-- HOMES -->
+  <div id="page-homes" class="page">
+    <div class="pg pg2">
+      <div class="panel" style="margin-bottom:0"><div class="pt" style="color:#4f8ef7" id="ePropTitle">Property 1</div><table class="pt2" id="eTbl"></table></div>
+      <div class="panel" style="margin-bottom:0"><div class="pt" style="color:#22c87a" id="dPropTitle">Property 2</div><table class="pt2" id="dTbl"></table></div>
+    </div>
+    <div class="panel" style="margin-top:13px"><div class="pt">Loan balance vs property value</div>
+      <div class="leg"><div class="li"><div class="ld" style="background:#4f8ef7"></div>Eliot bal</div><div class="li"><div class="ld" style="background:#22c87a"></div>Devin bal</div><div class="li"><div class="ldash" style="border-color:#4f8ef7;opacity:.6"></div>Eliot value</div><div class="li"><div class="ldash" style="border-color:#22c87a;opacity:.6"></div>Devin value</div></div>
+      <div class="cw" style="height:240px"><canvas id="homesChart"></canvas></div></div>
+  </div>
+
+  <!-- SPAIN PROPERTY -->
+  <div id="page-prop3" class="page">
+    <div class="panel">
+      <div class="pt">Spain property purchase &mdash; buy vs rent</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Model buying a home in Spain at or after retirement. Compare monthly cost of owning vs renting and see the surplus impact across all tabs when toggled on.</p>
+      <div class="buy-toggle-box" id="buyToggleBox">
+        <span style="font-size:13px;font-weight:500;color:var(--text2)">Apply to full model?</span>
+        <button id="buyToggleBtn" class="buy-tog-btn" onclick="toggleBuySpain()">
+          <span id="buyToggleIcon">&#9675;</span><span id="buyToggleLbl">No &mdash; just modelling</span>
+        </button>
+        <span style="font-size:11px;color:var(--text3)" id="buyToggleHint">Toggle ON to update surplus and year table everywhere</span>
+      </div>
+      <div class="cgrid" style="margin-bottom:14px">
+        <div class="ctrl"><div class="cl">Buy in year</div><input type="range" min="2026" max="2060" value="2039" step="1" id="p3BuyYear" oninput="renderP3()"><div class="cd" id="d-p3y">2039 <small>age 57</small></div></div>
+        <div class="ctrl"><div class="cl">Property price (EUR)</div><input type="number" id="p3Price" value="350000" min="0" step="10000" oninput="renderP3()"></div>
+        <div class="ctrl"><div class="cl">Down payment %</div><input type="range" min="10" max="40" value="30" step="5" id="p3Down" oninput="renderP3()"><div class="cd" id="d-p3d">30<small>%</small></div></div>
+        <div class="ctrl"><div class="cl">Mortgage rate %</div><input type="range" min="2" max="6" value="3.5" step="0.25" id="p3Rate" oninput="renderP3()"><div class="cd" id="d-p3r">3.5<small>%</small></div></div>
+        <div class="ctrl"><div class="cl">Term (years)</div><input type="range" min="10" max="30" value="20" step="5" id="p3Term" oninput="renderP3()"><div class="cd" id="d-p3t">20<small> yrs</small></div></div>
+        <div class="ctrl"><div class="cl">Alt rent/mo (EUR)</div><input type="number" id="p3Rent" value="1800" min="0" step="100" oninput="renderP3()"></div>
+        <div class="ctrl"><div class="cl">HOA/maintenance/mo</div><input type="number" id="p3Mgr" value="300" min="0" step="50" oninput="renderP3()"></div>
+        <div class="ctrl"><div class="cl">Spain appreciation/yr</div><input type="range" min="1" max="7" value="3.5" step="0.5" id="p3AppRate" oninput="renderP3()"><div class="cd" id="d-p3a">3.5<small>%/yr</small></div></div>
+      </div>
+      <div id="p3Summary"></div>
+      <div class="nb" style="margin-top:10px">Research: Spain HPI 2015-2024 averaged ~5.3%/yr (INE). Long-run 2006-2025 avg: 1.8%/yr (Eurostat, includes 2012 crash). Current 2024-2025: ~12%/yr (unsustainable). Planning assumption: 3-4%/yr is conservative and defensible for coastal/expat markets.</div>
+    </div>
+    <div class="panel"><div class="pt">Monthly housing cost &mdash; buy vs rent over time</div>
+      <div class="leg"><div class="li"><div class="ldash" style="border-color:#f87171"></div>Renting (inflated)</div><div class="li"><div class="ld" style="background:#2dd4bf"></div>Owning (mortgage+HOA)</div><div class="li"><div class="ld" style="background:#22c87a"></div>Post-payoff (HOA only)</div></div>
+      <div class="cw" style="height:240px"><canvas id="p3Chart"></canvas></div></div>
+    <div class="panel"><div class="pt">Net monthly surplus &mdash; buy vs rent</div>
+      <div class="leg"><div class="li"><div class="ldash" style="border-color:#f59e0b"></div>Surplus renting</div><div class="li"><div class="ld" style="background:#4f8ef7"></div>Surplus owning</div></div>
+      <div class="cw" style="height:220px"><canvas id="p3SurpChart"></canvas></div></div>
+  </div>
+
+  <!-- STRESS TEST -->
+  <div id="page-stress" class="page">
+    <div class="panel">
+      <div class="pt">Monte Carlo stress test &mdash; 500 scenarios</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Randomly varies 401k returns (&plusmn;4%), home appreciation (&plusmn;2%), and rent growth (&plusmn;1.5%) across 500 simulated futures to show probability of success to age 90.</p>
+      <div style="margin-bottom:14px"><button onclick="runMonteCarlo()" style="padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;font-weight:500">&#9654; Run 500 simulations</button><span id="mcStatus" style="font-size:12px;color:var(--text3);margin-left:12px"></span></div>
+      <div id="mcResults" style="display:none">
+        <div class="metrics" id="mcMetrics"></div>
+        <div style="margin-top:14px"><div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Outcome distribution</div><div id="mcBars"></div></div>
+        <div class="panel" style="margin-top:13px;margin-bottom:0"><div class="pt">Net worth fan chart (10th / 50th / 90th percentile)</div>
+          <div class="cw" style="height:240px"><canvas id="mcChart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SENSITIVITY -->
+  <div id="page-sensitivity" class="page">
+    <div class="panel">
+      <div class="pt">What moves the needle most?</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Each row shows the impact of a single change on your monthly retirement income, holding all else equal.</p>
+      <div class="tw"><table class="sens-table"><thead><tr><th>Decision / Change</th><th>Monthly income impact</th><th>10-yr NW impact</th><th>Verdict</th></tr></thead><tbody id="sensTbody"></tbody></table></div>
+    </div>
+    <div class="panel"><div class="pt">Monthly income impact &mdash; each lever</div>
+      <div class="cw" style="height:260px"><canvas id="sensChart"></canvas></div></div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div id="page-milestones" class="page">
+    <div class="panel"><div class="pt">Income milestone timeline</div><div class="timeline" id="tlItems"></div></div>
+    <div class="panel"><div class="pt">Monthly income step-changes over time</div>
+      <div class="cw" style="height:260px"><canvas id="tlChart"></canvas></div></div>
+  </div>
+
+  <!-- PAYDOWN -->
+  <div id="page-paydown" class="page">
+    <div class="pdp">
+      <div class="pdpt" style="color:#4f8ef7" id="ePdTitle">Property 1</div>
+      <div class="pdlist" id="eliot-pdlist"></div>
+      <button class="pdadd" onclick="addPmt('eliot')">+ Add lump sum payment</button>
+      <div class="pdrb"><span class="prl">Payoff:</span><span class="prv mt" id="e-pov">Standard 2042</span><span class="prl" style="margin-left:7px">Yrs saved:</span><span class="prv mt" id="e-ys">--</span><span class="prl" style="margin-left:7px">Interest saved:</span><span class="prv mt" id="e-is">--</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:5px" id="e-tl"></div>
+    </div>
+    <div class="pdp">
+      <div class="pdpt" style="color:#22c87a" id="dPdTitle">Property 2</div>
+      <div class="pdlist" id="devin-pdlist"></div>
+      <button class="pdadd" onclick="addPmt('devin')">+ Add lump sum payment</button>
+      <div class="pdrb"><span class="prl">Payoff:</span><span class="prv mt" id="d-pov">Standard 2050</span><span class="prl" style="margin-left:7px">Yrs saved:</span><span class="prv mt" id="d-ys">--</span><span class="prl" style="margin-left:7px">Interest saved:</span><span class="prv mt" id="d-is">--</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:5px" id="d-tl"></div>
+    </div>
+    <div class="nb b" style="margin-bottom:13px">Lump sums deducted from cash savings in the year paid. Year Table and all projections update in real time.</div>
+    <div class="pg pg2">
+      <div class="panel" style="margin-bottom:0"><div class="pt" style="color:#4f8ef7">Eliot St balance</div><div class="leg"><div class="li"><div class="ldash" style="border-color:#888"></div>Standard</div><div class="li"><div class="ld" style="background:#4f8ef7"></div>With lumps</div></div><div class="cw" style="height:190px"><canvas id="pdE"></canvas></div></div>
+      <div class="panel" style="margin-bottom:0"><div class="pt" style="color:#22c87a">Devinney balance</div><div class="leg"><div class="li"><div class="ldash" style="border-color:#888"></div>Standard</div><div class="li"><div class="ld" style="background:#22c87a"></div>With lumps</div></div><div class="cw" style="height:190px"><canvas id="pdD"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- TAX & RUNWAY -->
+  <div id="page-tax" class="page">
+    <div class="pg pg2">
+      <div class="panel" style="margin-bottom:0">
+        <div class="pt">401k withdrawal tax estimate</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px">US federal estimate based on total retirement income. As a US citizen abroad, 401k withdrawals are still US-taxed.</p>
+        <div id="taxTable"></div>
+        <div class="nb" style="margin-top:10px" id="taxNote"></div>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <div class="pt">Runway calculator &mdash; worst case</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px">If all income stopped today, how long does your total net worth last at your Spain spending rate?</p>
+        <div id="runwayDisplay"></div>
+        <div class="nb g" style="margin-top:10px" id="runwayNote"></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:13px"><div class="pt">Net monthly income after tax &mdash; at retirement</div><div id="taxAfter"></div></div>
+  </div>
+
+  <!-- YEAR TABLE -->
+  <div id="page-table" class="page">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
+        <div class="pt" style="margin:0">Annual projection table</div>
+        <div class="tg" style="margin:0"><button class="tb active" onclick="setTV('all',this)">All years</button><button class="tb" onclick="setTV('retire',this)">Near retirement</button></div>
+      </div>
+      <div class="tw"><table><thead><tr><th>Year</th><th>Age</th><th>Cash</th><th>401k</th><th>Eliot loan</th><th>Eliot equity</th><th>Devin loan</th><th>Devin equity</th><th>Total NW</th><th>Gross/mo</th><th>Tax est.</th><th>Net/mo</th><th id="yearTableSurplusHeader">Abroad surplus</th><th>Notes</th></tr></thead><tbody id="ytbody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- AI ADVISOR -->
+  <div id="page-advisor" class="page">
+    <div class="panel">
+      <div class="pt">AI Retirement Advisor</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Analyzes your full financial picture and gives specific, actionable recommendations based on your actual numbers.</p>
+      <div id="advisorContent">
+        <div style="text-align:center;padding:30px;color:var(--text3)">
+          <div style="font-size:32px;margin-bottom:8px">&#9733;</div>
+          <div style="font-size:13px;margin-bottom:14px">Click to analyze your retirement plan</div>
+          <button onclick="generateAdvice()" style="padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Generate Advice</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wm">Retirement Wealth Tracker &middot; Jas &middot; 2026 &middot; Estimates only &mdash; not financial advice</div>
+</div></div></div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://wsasqxocibzxfzkaiucr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzYXNxeG9jaWJ6eGZ6a2FpdWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MTAzNzMsImV4cCI6MjA5NjI4NjM3M30.UYKM5KbV4oBXyQh0FDEduDPvO5tzLHS2DAh_ZKV_PcA';
+const ADMIN_EMAIL  = 'jaspurdue@gmail.com';
+let sbClient = null, currentUser = null, saveTimeout_id = null;
+window.USER_PROPERTIES = [];
+window._retirementLocation = 'Spain';
+window._currentAge = 44;
+window._ssBase67 = 3806;
+window._intakeName = '';
+
+async function initAuth() {
+  const { createClient } = supabase;
+  sbClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session?.user) { window.location.href = '/index.html'; return false; }
+  currentUser = session.user;
+  await loadUserData();
+  return true;
+}
+
+async function loadUserData() {
+  if (!sbClient || !currentUser) return;
+
+  // Load profile — get intake name and admin status
+  const { data: profile } = await sbClient.from('user_profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  
+  // Load settings
+  let settings = null; try { const r = await sbClient.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle(); settings = r.data; } catch(e){ console.warn('settings load:', e.message); }
+  if (settings) applySettingsToUI(settings);
+
+  // Load properties
+  const { data: props } = await sbClient.from('user_properties').select('*').eq('user_id', currentUser.id).order('sort_order');
+  if (props && props.length > 0) {
+    window.USER_PROPERTIES = props;
+    applyPropertiesToModel(props);
+  } else {
+    // No properties — zero out the defaults so we don't show Jas's properties
+    window.ELIOT_OVERRIDE = { balance:0, rate:0, piPayment:0, totalPayment:0, currentValue:0, netRent:0, grossRent:0, nickname:'Property 1', type:'rental' };
+    window.DEVIN_OVERRIDE = { balance:0, rate:0, piPayment:0, totalPayment:0, currentValue:0, grossRent:0, mgmtFee:0, nickname:'Property 2', type:'primary' };
+  }
+
+  // Use intake name if available, fall back to Google name
+  const displayName = profile?.full_name || currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+  window._intakeName = displayName;
+  const loc = settings?.retirement_location || 'Spain';
+  window._retirementLocation = loc;
+
+  // Update all name/location elements
+  const els = {
+    'userName': displayName,
+    'userEmail': currentUser.email,
+    'userSubtitle': displayName + ' · → ' + loc,
+    'userDisplayName': displayName,
+  };
+  Object.entries(els).forEach(([id,val]) => { const el=document.getElementById(id); if(el) el.textContent=val; });
+
+  // Update location label in sidebar
+  const locNav = document.getElementById('locationNavLabel');
+  if (locNav) locNav.textContent = loc + ' Property';
+
+  // Avatar
+  const avatarEl = document.getElementById('userAvatar');
+  const fallbackEl = document.getElementById('userAvatarFallback');
+  const photoUrl = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
+  if (avatarEl && photoUrl) {
+    avatarEl.src = photoUrl;
+    avatarEl.style.display = 'block';
+    if (fallbackEl) fallbackEl.style.display = 'none';
+  } else if (fallbackEl) {
+    fallbackEl.textContent = displayName[0].toUpperCase();
+  }
+
+  // Show admin link only for admin
+  const adminLink = document.getElementById('adminLink');
+  if (adminLink) adminLink.style.display = profile?.is_admin ? 'block' : 'none';
+
+  // *** CRITICAL: Re-render everything now that Supabase data is loaded ***
+  // This overwrites any stale localStorage values with correct user data
+  if (typeof render === 'function') {
+    setTimeout(() => {
+      try{render();}catch(e){console.error('Re-render error',e);}
+      try{if(typeof renderPD==='function')renderPD();}catch(e){}
+      try{if(typeof renderP3==='function')renderP3();}catch(e){}
+    }, 300);
+  }
+}
+
+function applySettingsToUI(s) {
+  // Clear any stale localStorage values so Supabase data takes precedence
+  try { localStorage.removeItem('rts3'); } catch(e) {}
+  const map = {
+    'retireAge':s.retire_age,'rate401k':s.rate_401k,'ssAge':s.ss_draw_age,
+    'appRate':s.app_rate,'rentGrowth':s.rent_growth,'mgrFee':s.mgr_fee,
+    'moRented':s.months_rented,'spainCost':s.spain_budget,
+    'spainInflation':s.spain_inflation,'curSalary':s.current_salary,
+    'curCash':s.cash_balance,'cur401k':s.k401_balance
+  };
+  Object.entries(map).forEach(([id,val]) => {
+    if (val!=null) { const el=document.getElementById(id); if(el) el.value=val; }
+  });
+  if (s.ss_base_67) window._ssBase67 = s.ss_base_67;
+  if (s.current_age) window._currentAge = s.current_age;
+  if (s.retirement_location) window._retirementLocation = s.retirement_location;
+  // Sync the inline country dropdown
+  if (s.retirement_location) { const dc=document.getElementById('destCountry'); if(dc) dc.value=s.retirement_location; }
+  if (s.annual_401k_add != null) { window._annual401kAdd = s.annual_401k_add; const af=document.getElementById('annual401kAdd'); if(af) af.value=s.annual_401k_add; }
+}
+
+function applyPropertiesToModel(props) {
+  // Override global property constants with user's actual data
+  const makeOverride = (p) => {
+    const mr = (p.interest_rate/100)/12;
+    const n = (p.loan_term_years||30)*12;
+    const pi = p.monthly_pi || (p.loan_balance>0&&p.interest_rate>0
+      ? Math.round(p.loan_balance*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1)) : 0);
+    return {
+      nickname: p.nickname, address: p.address,
+      balance: p.loan_balance||0, rate: (p.interest_rate||0)/100,
+      piPayment: pi, totalPayment: p.monthly_piti||pi,
+      currentValue: p.current_value||0,
+      netRent: p.gross_rent ? p.gross_rent*(1-(p.mgmt_fee||0)/100) : 0,
+      grossRent: p.gross_rent||0, mgmtFee: (p.mgmt_fee||0)/100,
+      type: p.property_type
+    };
+  };
+  if (props[0]) window.ELIOT_OVERRIDE = makeOverride(props[0]);
+  if (props[1]) window.DEVIN_OVERRIDE = makeOverride(props[1]);
+  // Zero out if only 1 property
+  if (props.length < 2) window.DEVIN_OVERRIDE = { balance:0, rate:0, piPayment:0, totalPayment:0, currentValue:0, grossRent:0, mgmtFee:0, nickname:'', type:'primary' };
+  if (props.length < 1) window.ELIOT_OVERRIDE = { balance:0, rate:0, piPayment:0, totalPayment:0, currentValue:0, netRent:0, grossRent:0, nickname:'', type:'rental' };
+}
+
+function scheduleAutoSave() {
+  clearTimeout(saveTimeout_id);
+  saveTimeout_id = setTimeout(autoSaveSettings, 2000);
+}
+
+async function autoSaveSettings() {
+  if (!sbClient || !currentUser) return;
+  const s = {
+    user_id:currentUser.id,
+    retire_age:+gv('retireAge')||57, rate_401k:+gv('rate401k')||7,
+    ss_draw_age:+gv('ssAge')||67, app_rate:+gv('appRate')||3.5,
+    rent_growth:+gv('rentGrowth')||3, mgr_fee:+gv('mgrFee')||9,
+    months_rented:+gv('moRented')||11, spain_budget:+gv('spainCost')||4500,
+    spain_inflation:+gv('spainInflation')||2.5, current_salary:+gv('curSalary')||195000,
+    cash_balance:+gv('curCash')||175000, k401_balance:+gv('cur401k')||550000,
+    updated_at: new Date().toISOString()
+  };
+  await sbClient.from('user_settings').upsert(s, {onConflict:'user_id'});
+  const el=document.getElementById('saveIndicator');
+  if(el){el.textContent='✓ Saved';el.style.opacity='1';setTimeout(()=>el.style.opacity='0',2000);}
+}
+
+async function signOut() {
+  if (sbClient) await sbClient.auth.signOut();
+  window.location.href = '/index.html';
+}
+
+const CY=2026,CA=44;
+// ── Country monthly retirement budgets (USD, single person, comfortable) ──
+const COUNTRY_BUDGETS = {
+  Portugal:3000, Spain:3200, Mexico:2800, Panama:2600, Greece:2900,
+  Italy:3300, Colombia:2400, Thailand:2500,
+  Netherlands:4200, Germany:4000, Austria:4100, Switzerland:6500
+};
+// ── 2026 IRS 401k base employee-deferral limit. Grows ~$500/yr (COLA proxy). ──
+const IRS_401K_BASE_2026 = 24500;     // employee deferral limit, 2026
+const IRS_401K_ANNUAL_STEP = 500;     // assumed annual COLA increase
+// Returns the IRS base max for a given calendar year (no catch-up — base only).
+function irsMaxForYear(year){
+  const yearsFrom2026 = Math.max(0, year - 2026);
+  return IRS_401K_BASE_2026 + yearsFrom2026 * IRS_401K_ANNUAL_STEP;
+}
+const ELIOT={balance:169979,rate:.0325,piPayment:1106,totalPayment:1800,currentValue:743000,netRent:3000};
+const DEVIN={balance:446204,rate:.0275,piPayment:2093,totalPayment:3200,currentValue:960000,grossRent:4000};
+let TV='all',CH={},sbCol=false,mobOpen=false,buySpain=false;
+const LP={eliot:[],devin:[]};let pdId=0;
+
+function toggleSB(){sbCol=!sbCol;document.getElementById('sb').classList.toggle('col',sbCol);save();}
+function toggleMob(){mobOpen=!mobOpen;document.getElementById('sb').classList.toggle('mob-open',mobOpen);document.getElementById('sbov').style.display=mobOpen?'block':'none';}
+function nav(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  if(window.innerWidth<=768){mobOpen=false;document.getElementById('sb').classList.remove('mob-open');document.getElementById('sbov').style.display='none';}
+  render();
+}
+function setTV(v,b){TV=v;document.querySelectorAll('.tb').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');render();}
+function toggleTheme(){const d=document.documentElement.getAttribute('data-theme')==='dark';document.documentElement.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').textContent=d?'\u{1F319}':'\u2600\uFE0F';save();render();}
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+const fmtK=n=>'$'+Math.round(n/1000)+'k';
+const fmtM=n=>n>=1e6?'$'+(n/1e6).toFixed(2)+'M':fmtK(n);
+const fmtAx=n=>n>=1e6?'$'+(n/1e6).toFixed(1)+'M':'$'+Math.round(n/1000)+'k';
+const isDark=()=>document.documentElement.getAttribute('data-theme')==='dark';
+const gc=()=>isDark()?'rgba(255,255,255,.04)':'rgba(0,0,0,.04)';
+const tc=()=>isDark()?'#555d6b':'#9ca3af';
+const scOpts=()=>({x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:fmtAx,color:tc(),maxTicksLimit:6},grid:{color:gc()}}});
+
+function save(){scheduleAutoSave();try{localStorage.setItem('rts3',JSON.stringify({ra:gv('retireAge'),r4:gv('rate401k'),ss:gv('ssAge'),ap:gv('appRate'),rg:gv('rentGrowth'),mf:gv('mgrFee'),mo:gv('moRented'),sp:gv('spainCost'),si:gv('spainInflation'),sal:gv('curSalary'),cc:gv('curCash'),c4:gv('cur401k'),theme:document.documentElement.getAttribute('data-theme'),col:sbCol,bs:buySpain}));}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('rts3')||'{}');['ra','r4','ss','ap','rg','mf','mo','sp','si','sal','cc','c4'].forEach(k=>{const ids={ra:'retireAge',r4:'rate401k',ss:'ssAge',ap:'appRate',rg:'rentGrowth',mf:'mgrFee',mo:'moRented',sp:'spainCost',si:'spainInflation',sal:'curSalary',cc:'curCash',c4:'cur401k'};if(s[k])sv(ids[k],s[k]);});if(s.theme){document.documentElement.setAttribute('data-theme',s.theme);document.getElementById('themeBtn').textContent=s.theme==='dark'?'\u{1F319}':'\u2600\uFE0F';}if(s.col){sbCol=true;document.getElementById('sb').classList.add('col');}if(s.bs)toggleBuySpain();}catch(e){}}
+function gv(id){const el=document.getElementById(id);return el?el.value:'';}
+function sv(id,v){const el=document.getElementById(id);if(el)el.value=v;}
+function getP(){return{retireAge:+gv('retireAge')||57,rate401k:(+gv('rate401k')||7)/100,ssAge:+gv('ssAge')||0,appRate:(+gv('appRate')||3.5)/100,rentGrowth:(+gv('rentGrowth')||3)/100,mgrFee:(+gv('mgrFee')||9)/100,moRented:(+gv('moRented')||11)/12,spainCost:+gv('spainCost')||4500,spainInflation:(+gv('spainInflation')||2.5)/100,curSalary:+gv('curSalary')||195000,curCash:+gv('curCash')||175000,cur401k:+gv('cur401k')||550000,eliotLumps:getLM('eliot'),devinLumps:getLM('devin')};}
+
+function calcSS(a){
+  // Real SSA numbers: at 67=$3,806, at 62=$2,653, at 70=$4,719 (May 2026 record)
+  // Each additional year working at $195k adds ~$45/mo to age-67 benefit
+  const retireAge=+gv('retireAge')||57;
+  const currentAge=window._currentAge||44;
+  const addYrs=Math.max(0,retireAge-currentAge);
+  const ssBase=window._ssBase67||3806;
+  const base67=ssBase+(addYrs*45);
+  const base62=Math.round(2653*(base67/3806));
+  const base70=Math.round(4719*(base67/3806));
+  if(!a)return 0;
+  if(a==62)return base62;
+  if(a==67)return base67;
+  if(a==70)return base70;
+  return base67;
+}
+function estimateTax(annualIncome){
+  const brackets=[[11600,.10],[44725,.12],[95375,.22],[201050,.24],[383900,.32],[487450,.35],[Infinity,.37]];
+  let tax=0,prev=0;
+  for(const[top,rate]of brackets){const slice=Math.min(annualIncome,top)-prev;if(slice<=0)break;tax+=slice*rate;prev=top;}
+  return tax;
+}
+function amort(bal,rate,pmt,lumps,cap){const mr=rate/12;let b=bal;const out=[];for(let y=0;y<(cap||40);y++){const yr=CY+y;if(b<=0){out.push(0);continue;}if(y>0){for(let m=0;m<12;m++){if(b<=0)break;const i=b*mr;b=Math.max(0,b-Math.max(0,pmt-i));}}if(lumps&&lumps[yr])b=Math.max(0,b-Math.min(lumps[yr],b));out.push(b);}return out;}
+function addPmt(p){
+  // Don't allow payments on a property with no loan balance
+  const ov = p==='eliot' ? (window.ELIOT_OVERRIDE||ELIOT) : (window.DEVIN_OVERRIDE||DEVIN);
+  if(!ov || !(ov.balance>0)){
+    alert('This property has no loan balance to pay down. Add a property with a mortgage in Setup first.');
+    return;
+  }
+  LP[p].push({id:pdId++,amount:0,year:CY+2});renderPD();
+}
+function rmPmt(p,id){LP[p]=LP[p].filter(x=>x.id!==id);renderPD();}
+function onLC(p,id,f,v){const it=LP[p].find(x=>x.id===id);if(it)it[f]=f==='year'?+v:+v||0;renderPD();}
+function getLM(p){const m={};LP[p].forEach(x=>{if(x.amount>0)m[x.year]=(m[x.year]||0)+x.amount;});return m;}
+function getCBY(){const p=getP(),ry=CY+(p.retireAge-CA);let c=p.curCash;const m={[CY]:c};for(let y=CY+1;y<=2075;y++){const r=y>=ry;c=r?c*1.025:c*1.025+20000;const el=(p.eliotLumps&&p.eliotLumps[y])||0,dl=(p.devinLumps&&p.devinLumps[y])||0;c=Math.max(0,c-el-dl);m[y]=c;}return m;}
+function getLBY(prop){const isE=prop==='eliot',b0=isE?ELIOT.balance:DEVIN.balance,rate=isE?ELIOT.rate:DEVIN.rate,pi=isE?ELIOT.piPayment:DEVIN.piPayment,lumps=getLM(prop),mr=rate/12;let b=b0;const m={[CY]:Math.round(b)};for(let y=1;y<=40;y++){const yr=CY+y;if(b<=0){m[yr]=0;continue;}for(let mm=0;mm<12;mm++){if(b<=0)break;const i=b*mr;b=Math.max(0,b-Math.max(0,pi-i));}if(lumps[yr])b=Math.max(0,b-lumps[yr]);m[yr]=Math.round(b);}return m;}
+
+function getSpainPropertyParams(){return{price:+gv('p3Price')||350000,downPct:(+gv('p3Down')||30)/100,rate:(+gv('p3Rate')||3.5)/100,termYrs:+gv('p3Term')||20,buyYear:+gv('p3BuyYear')||2039,rentAlt:+gv('p3Rent')||1800,hoa:+gv('p3Mgr')||300};}
+function getSpainMortgagePmt(sp){const loan=sp.price*(1-sp.downPct),mr=sp.rate/12,n=sp.termYrs*12;return n>0?loan*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1):0;}
+function getSpainBudgetForYear(yr,p){
+  const inflated=p.spainCost*Math.pow(1+p.spainInflation,Math.max(0,yr-CY));
+  if(!buySpain)return inflated;
+  const sp=getSpainPropertyParams(),pmt=getSpainMortgagePmt(sp),payoffYr=sp.buyYear+sp.termYrs;
+  const rentInflated=sp.rentAlt*Math.pow(1+p.spainInflation,Math.max(0,yr-CY));
+  const otherCosts=Math.max(0,inflated-rentInflated);
+  let housing;
+  if(yr<sp.buyYear)housing=rentInflated;
+  else if(yr<payoffYr)housing=pmt+sp.hoa;
+  else housing=sp.hoa;
+  return otherCosts+housing;
+}
+function toggleBuySpain(){
+  buySpain=!buySpain;
+  const btn=document.getElementById('buyToggleBtn'),ico=document.getElementById('buyToggleIcon'),lbl=document.getElementById('buyToggleLbl'),hint=document.getElementById('buyToggleHint'),box=document.getElementById('buyToggleBox');
+  if(buySpain){btn.classList.add('on');ico.textContent='\u25CF';lbl.textContent='Yes \u2014 applying to full model';hint.textContent='All surplus, year table, viability now reflect Spain property costs';box.classList.add('on');}
+  else{btn.classList.remove('on');ico.textContent='\u25CB';lbl.textContent='No \u2014 just modelling';hint.textContent='Toggle ON to update surplus and year table everywhere';box.classList.remove('on');}
+  renderP3();render();
+}
+
+function project(p){
+  const ry=CY+(p.retireAge-CA);
+  // Use user-specific property data if loaded from Supabase
+  const _E=window.ELIOT_OVERRIDE||ELIOT;
+  const _D=window.DEVIN_OVERRIDE||DEVIN;
+  let cash=p.curCash,k401=p.cur401k,eBal=_E.balance,dBal=_D.balance,eVal=_E.currentValue,dVal=_D.currentValue,eRent=_E.netRent||(_E.grossRent*(1-(_E.mgmtFee||0))),dRent=_D.grossRent;
+  const rows=[];
+  for(let yr=CY;yr<=2075;yr++){
+    const age=CA+(yr-CY),ret=yr>=ry,ssOn=p.ssAge>0&&age>=p.ssAge,ssAmt=ssOn?calcSS(p.ssAge):0;
+    if(yr>CY){eVal*=(1+p.appRate);dVal*=(1+p.appRate);eRent*=(1+p.rentGrowth);dRent*=(1+p.rentGrowth);}
+    let draw=0;
+    if(yr===CY){}
+    else if(!ret){const entered=+gv('annual401kAdd')||irsMaxForYear(yr);const contrib=Math.max(entered,irsMaxForYear(yr));k401=k401*(1+p.rate401k)+contrib;cash=cash*1.025+20000;}
+    else{k401=k401*(1+p.rate401k);draw=k401*0.04;k401=Math.max(0,k401-draw);cash=cash*1.025;}
+    if(yr>CY){const emr=_E.rate/12,dmr=_D.rate/12;for(let m=0;m<12;m++){if(eBal>0){const i=eBal*emr;eBal=Math.max(0,eBal-Math.max(0,_E.piPayment-i));}if(dBal>0){const i=dBal*dmr;dBal=Math.max(0,dBal-Math.max(0,_D.piPayment-i));}}}
+    const el=(p.eliotLumps&&p.eliotLumps[yr])||0,dl=(p.devinLumps&&p.devinLumps[yr])||0;
+    if(el>0){const ep=Math.min(el,eBal,cash);eBal=Math.max(0,eBal-ep);cash=Math.max(0,cash-ep);}
+    if(dl>0){const dp=Math.min(dl,dBal,cash);dBal=Math.max(0,dBal-dp);cash=Math.max(0,cash-dp);}
+    const vf=p.moRented;
+    const eNet=eBal>1?Math.max(0,eRent*vf-_E.totalPayment):eRent*vf;
+    const dG=ret?dRent*(1-p.mgrFee):0,dNet=dBal>1?Math.max(0,dG*vf-_D.totalPayment):dG*vf;
+    const draw4=ret?draw/12:0,totalMo=eNet+dNet+draw4+ssAmt;
+    const eEq=Math.max(0,eVal-eBal),dEq=Math.max(0,dVal-dBal),totNW=cash+k401+eEq+dEq;
+    const notes=[];
+    if(yr===ry)notes.push('Retirement');
+    if(eBal<1&&rows.length&&rows[rows.length-1].eBal>=1)notes.push('Eliot paid off');
+    if(dBal<1&&rows.length&&rows[rows.length-1].dBal>=1)notes.push('Devinney paid off');
+    if(ssOn&&!rows.find(r=>r.ssOn))notes.push('SS starts');
+    if(el>0)notes.push('-$'+Math.round(el).toLocaleString()+' Eliot');
+    if(dl>0)notes.push('-$'+Math.round(dl).toLocaleString()+' Devinney');
+    rows.push({yr,age,cash,k401,eBal:Math.max(0,eBal),dBal:Math.max(0,dBal),eVal,dVal,eEq,dEq,totNW,eNet,dNet,draw4,ssAmt,totalMo,ret,ssOn,notes,draw});
+  }
+  return{rows,ry};
+}
+function findEarliestViable(spainCostBase){
+  const p=getP();
+  for(let age=45;age<=67;age++){const ry2=CY+(age-CA);const cp={...p,retireAge:age,eliotLumps:{},devinLumps:{}};const{rows}=project(cp);const rr=rows.find(r=>r.yr===ry2);const budget=getSpainBudgetForYear(ry2,{...p,retireAge:age});if(rr&&rr.totalMo>=budget)return age;}
+  return null;
+}
+function dC(id){if(CH[id]){try{CH[id].destroy();}catch(e){}delete CH[id];}}
+function mC(id,cfg){
+  dC(id);
+  const el=document.getElementById(id);
+  if(!el)return;
+  // Disable animation for reliability, ensure responsive sizing
+  if(!cfg.options)cfg.options={};
+  cfg.options.animation=false;
+  cfg.options.responsive=true;
+  cfg.options.maintainAspectRatio=false;
+  try{CH[id]=new Chart(el,cfg);}catch(e){console.warn('Chart error',id,e);}
+}
+
+function render(){
+  save();
+  const p=getP(),ry=CY+(p.retireAge-CA);
+  document.getElementById('d-ra').innerHTML=p.retireAge+' <small>&middot; '+ry+'</small>';
+  document.getElementById('d-r4').innerHTML=(p.rate401k*100).toFixed(1)+'<small>%/yr</small>';
+  document.getElementById('d-ap').innerHTML=(p.appRate*100).toFixed(1)+'<small>%/yr</small>';
+  document.getElementById('d-rg').innerHTML=(p.rentGrowth*100).toFixed(1)+'<small>%/yr</small>';
+  document.getElementById('d-mf').innerHTML=(p.mgrFee*100).toFixed(0)+'<small>%</small>';
+  document.getElementById('d-mo').innerHTML=Math.round(p.moRented*12)+'<small> mo/yr</small>';
+  document.getElementById('d-si').innerHTML=(p.spainInflation*100).toFixed(1)+'<small>%/yr</small>';
+  const ss67=calcSS(67),ss62=calcSS(62),ss70=calcSS(70);
+  const ssL={0:'Not drawing SS',62:'$'+ss62+'/mo at 62',67:'$'+ss67+'/mo at 67',70:'$'+ss70+'/mo at 70'};
+  document.getElementById('d-ss').textContent=ssL[p.ssAge]||'';
+  document.getElementById('lbadge').textContent='Retiring age '+p.retireAge+' \u00b7 '+ry;
+  // ── Travel theme: destination card + location-aware labels ──────────
+  (function(){
+    const loc=window._retirementLocation||'Spain';
+    const photos={
+      Spain:'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=800&q=60&auto=format&fit=crop',
+      Portugal:'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&q=60&auto=format&fit=crop',
+      Italy:'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=60&auto=format&fit=crop',
+      Mexico:'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?w=800&q=60&auto=format&fit=crop',
+      Thailand:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=60&auto=format&fit=crop',
+      Greece:'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=60&auto=format&fit=crop',
+      Colombia:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=60&auto=format&fit=crop',
+      USA:'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&q=60&auto=format&fit=crop'
+    };
+    const dc=document.getElementById('destCard');
+    const di=document.getElementById('destImg');
+    const dn=document.getElementById('destName');
+    const ds=document.getElementById('destSubtitle');
+    if(dc){dc.style.display='block';if(di&&photos[loc])di.src=photos[loc];if(dn)dn.textContent=loc;if(ds)ds.textContent='Your retirement destination \u00b7 '+ry;}
+    const bt=document.getElementById('budgetPanelTitle');if(bt)bt.textContent=loc+' monthly budget';
+    const bfl=document.getElementById('budgetFieldLabel');if(bfl)bfl.textContent=loc+' budget/mo ($)';
+    const ln=document.getElementById('locationNavLabel');if(ln)ln.textContent=loc+' Property';
+    const sl=document.getElementById('surplusMetricLabel');if(sl)sl.textContent=loc+' surplus (net of tax)';
+    const yt=document.getElementById('yearTableSurplusHeader');if(yt)yt.textContent=loc+' surplus';
+  })();
+  const{rows}=project(p);
+  const rr=rows.find(r=>r.yr===ry)||rows[rows.length-1];
+  const taxMo=estimateTax(rr.totalMo*12)/12,netMo=rr.totalMo-taxMo;
+  const spainAtRetire=getSpainBudgetForYear(ry,p),surpMo=netMo-spainAtRetire;
+  // Spain display
+  const spNote=document.getElementById('spainInflNote');
+  if(spNote){if(buySpain){const sp2=getSpainPropertyParams();const pmt2=getSpainMortgagePmt(sp2);spNote.textContent='\uD83C\uDFE0 Buying in '+sp2.buyYear+': mortgage+HOA '+fmt(Math.round(pmt2+sp2.hoa))+'/mo (payoff '+(sp2.buyYear+sp2.termYrs)+') vs renting '+fmt(sp2.rentAlt)+'/mo. Effective cost at retirement: '+fmt(Math.round(spainAtRetire))+'/mo';}else{spNote.textContent='Today: '+fmt(p.spainCost)+'/mo \u2192 At retirement ('+ry+'): '+fmt(Math.round(spainAtRetire))+'/mo ('+((p.spainInflation*100).toFixed(1))+'%/yr inflation over '+(ry-CY)+' yrs)';}}
+  const sv=document.getElementById('spval'),sa=document.getElementById('spannu');
+  sv.textContent=fmt(surpMo)+'/mo';sv.className='spval '+(surpMo>=0?'pos':'neg');
+  sa.textContent=fmt(surpMo*12)+'/yr';sa.style.color=surpMo>=0?'var(--green)':'var(--red)';
+  // Metrics
+  document.getElementById('mrow').innerHTML=`
+    <div class="metric"><div class="ml">Net worth at retirement</div><div class="mv">${fmtM(rr.totNW)}</div><div class="ms">age ${p.retireAge} &middot; ${ry}</div></div>
+    <div class="metric g"><div class="ml">Gross monthly income</div><div class="mv g">${fmt(rr.totalMo)}<span style="font-size:10px;color:var(--text2)">/mo</span></div><div class="ms">before tax</div></div>
+    <div class="metric t"><div class="ml">Net monthly (after tax)</div><div class="mv" style="color:var(--teal)">${fmt(netMo)}<span style="font-size:10px;color:var(--text2)">/mo</span></div><div class="ms">est. ${(estimateTax(rr.totalMo*12)/rr.totalMo/12*100).toFixed(0)}% effective rate</div></div>
+    <div class="metric a"><div class="ml">Cash at retirement</div><div class="mv a">${fmtK(rr.cash)}</div><div class="ms">$20k/yr stops at retirement</div></div>
+    <div class="metric"><div class="ml">401k balance</div><div class="mv">${fmtM(rr.k401)}</div><div class="ms">4% draw after retirement</div></div>
+    <div class="metric p"><div class="ml" id="surplusMetricLabel">Abroad surplus (net of tax)</div><div class="mv" style="color:${surpMo>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(surpMo))}<span style="font-size:10px;color:var(--text2)">/mo</span></div><div class="ms">${surpMo>=0?'above':'below'} budget after tax</div></div>`;
+  const dep=rows.find(r=>r.ret&&r.k401<1000);
+  document.getElementById('k401warn').innerHTML=dep?`<div class="nb r" style="margin-top:11px">&#9888; 401k depletes around ${dep.yr} (age ${dep.age}). Consider reducing draw rate or retiring later.</div>`:'';
+  // Income snap
+  document.getElementById('incSnap').innerHTML=`<table class="pt2"><tr><td class="k">Denver net rent</td><td class="v tp">${fmt(rr.eNet)}/mo</td></tr><tr><td class="k">Devinney net rent</td><td class="v tp">${fmt(rr.dNet)}/mo</td></tr><tr><td class="k">401k draw (4%)</td><td class="v tp">${fmt(rr.draw4)}/mo</td></tr><tr><td class="k">Social Security</td><td class="v ${rr.ssAmt>0?'tp':'tm'}">${rr.ssAmt>0?fmt(rr.ssAmt)+'/mo':'Not yet drawing'}</td></tr><tr><td class="k" style="font-weight:600">Gross total</td><td class="v tp" style="font-size:14px">${fmt(rr.totalMo)}</td></tr><tr><td class="k">Est. tax</td><td class="v tn">-${fmt(taxMo)}/mo</td></tr><tr><td class="k" style="font-weight:700">Net income</td><td class="v tp" style="font-size:15px;font-weight:700">${fmt(netMo)}</td></tr></table>`;
+  // Prop snap
+  document.getElementById('propSnap').innerHTML=`<table class="pt2"><tr><td></td><td class="v" style="color:var(--text3);font-size:10px">Eliot</td><td class="v" style="color:var(--text3);font-size:10px">Devinney</td></tr><tr><td class="k">Today value</td><td class="v">${fmtK(ELIOT.currentValue)}</td><td class="v">${fmtK(DEVIN.currentValue)}</td></tr><tr><td class="k">At retirement</td><td class="v">${fmtK(rr.eVal)}</td><td class="v">${fmtK(rr.dVal)}</td></tr><tr><td class="k">Loan balance</td><td class="v ${rr.eBal<1?'tp':'tn'}">${rr.eBal<1?'PAID OFF':fmtK(rr.eBal)}</td><td class="v ${rr.dBal<1?'tp':'tn'}">${rr.dBal<1?'PAID OFF':fmtK(rr.dBal)}</td></tr><tr><td class="k">Equity</td><td class="v tp">${fmtK(rr.eEq)}</td><td class="v tp">${fmtK(rr.dEq)}</td></tr></table>`;
+  // NW chart
+  const ny=rows.filter((_,i)=>i%2===0);
+  mC('nwChart',{type:'line',data:{labels:ny.map(r=>r.yr),datasets:[{label:'401k',data:ny.map(r=>Math.round(r.k401)),borderColor:'#4f8ef7',borderWidth:2,pointRadius:0,fill:false},{label:'Equity',data:ny.map(r=>Math.round(r.eEq+r.dEq)),borderColor:'#22c87a',borderWidth:2,pointRadius:0,fill:false},{label:'Cash',data:ny.map(r=>Math.round(r.cash)),borderColor:'#f59e0b',borderWidth:2,pointRadius:0,fill:false},{label:'Total',data:ny.map(r=>Math.round(r.totNW)),borderColor:'#a78bfa',borderWidth:2.5,borderDash:[5,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:scOpts()}});
+  // Income page
+  document.getElementById('incGrid').innerHTML=`<div class="ic"><span class="lb">Denver net rent</span><span class="am">${fmt(rr.eNet)}/mo</span></div><div class="ic"><span class="lb">Devinney net rent</span><span class="am">${fmt(rr.dNet)}/mo</span></div><div class="ic"><span class="lb">401k 4% draw</span><span class="am">${fmt(rr.draw4)}/mo</span></div><div class="ic"><span class="lb">Social Security</span><span class="am ${rr.ssAmt>0?'':'mt'}">${rr.ssAmt>0?fmt(rr.ssAmt)+'/mo':'Not drawing'}</span></div>`;
+  document.getElementById('incTotal').innerHTML=`<div style="background:rgba(34,200,122,.08);border:1px solid rgba(34,200,122,.2);border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;color:var(--text2)">Gross total at retirement (age ${p.retireAge})</div><div style="font-size:22px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${fmt(rr.totalMo)}/mo</div></div>`;
+  const moR=Math.round(p.moRented*12);
+  document.getElementById('ssNote').textContent=p.ssAge>0?'SS starts at age '+p.ssAge+' ('+( CY+(p.ssAge-CA))+'): $'+calcSS(p.ssAge)+'/mo. Real SSA data as of May 2026 record, adjusted for continued earnings to retirement. At 70: $'+calcSS(70)+'/mo.':'SS set to Don\'t draw. Your real SSA estimate at 67: $'+ss67+'/mo (based on actual SSA record, updated for continued earnings to retirement age).';
+  document.getElementById('vacNote').textContent='Properties rented '+moR+' of 12 months/yr. Effective income = gross x '+moR+'/12.';
+  const ry2=rows.filter(r=>r.ret&&r.yr%2===0);
+  mC('incChart',{type:'bar',data:{labels:ry2.map(r=>r.yr),datasets:[{label:'Denver',data:ry2.map(r=>Math.round(r.eNet)),backgroundColor:'#22c87a',stack:'s'},{label:'Devinney',data:ry2.map(r=>Math.round(r.dNet)),backgroundColor:'#4f8ef7',stack:'s'},{label:'401k',data:ry2.map(r=>Math.round(r.draw4)),backgroundColor:'#f59e0b',stack:'s'},{label:'SS',data:ry2.map(r=>Math.round(r.ssAmt)),backgroundColor:'#f87171',stack:'s'}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:tc(),maxTicksLimit:12,autoSkip:true},grid:{color:gc()}},y:{stacked:true,ticks:{callback:fmtAx,color:tc()},grid:{color:gc()}}}}});
+  // Homes
+  // Update property tab titles dynamically
+  const _Et = window.ELIOT_OVERRIDE || ELIOT;
+  const _Dt = window.DEVIN_OVERRIDE || DEVIN;
+  const ePT = document.getElementById('ePropTitle');
+  const dPT = document.getElementById('dPropTitle');
+  const ePdT = document.getElementById('ePdTitle');
+  const dPdT = document.getElementById('dPdTitle');
+  if(ePT) ePT.textContent = _Et.nickname || 'Property 1';
+  if(dPT) dPT.textContent = _Dt.nickname || 'Property 2';
+  if(ePdT) ePdT.textContent = (_Et.nickname||'Property 1') + (_Et.rate ? ' · ' + (_Et.rate*100).toFixed(2) + '%' : '');
+  if(dPdT) dPdT.textContent = (_Dt.nickname||'Property 2') + (_Dt.rate ? ' · ' + (_Dt.rate*100).toFixed(2) + '%' : '');
+  document.getElementById('eTbl').innerHTML=`<tr><td class="k">Current value</td><td class="v">${fmt(_Et.currentValue)}</td></tr><tr><td class="k">Loan balance</td><td class="v tn">${_Et.balance>0?fmt(_Et.balance):'None'}</td></tr><tr><td class="k">Equity today</td><td class="v tp">${fmt(Math.max(0,_Et.currentValue-_Et.balance))}</td></tr><tr><td class="k">Rate</td><td class="v">${_Et.rate>0?(_Et.rate*100).toFixed(2)+'%':'N/A'}</td></tr><tr><td class="k">P&I / PITI</td><td class="v">${_Et.piPayment>0?'$'+Math.round(_Et.piPayment).toLocaleString()+' / ~$'+Math.round(_Et.totalPayment).toLocaleString():'N/A'}</td></tr><tr><td class="k">Gross rent / Net</td><td class="v tp">${_Et.grossRent>0?fmt(_Et.grossRent)+' / '+fmt(_Et.netRent||_Et.grossRent):'Not set'}</td></tr><tr><td class="k">Value at retirement</td><td class="v">${fmt(rr.eVal)}</td></tr><tr><td class="k">Loan at retirement</td><td class="v ${rr.eBal<1?'tp':'tn'}">${rr.eBal<1?'PAID OFF':fmt(rr.eBal)}</td></tr><tr><td class="k">Equity at retirement</td><td class="v tp">${fmt(rr.eEq)}</td></tr><tr><td class="k">Net rent/mo</td><td class="v tp">${fmt(rr.eNet)}/mo</td></tr>`;
+  document.getElementById('dTbl').innerHTML=`<tr><td class="k">Current value</td><td class="v">${fmt(_Dt.currentValue)}</td></tr><tr><td class="k">Loan balance</td><td class="v tn">${_Dt.balance>0?fmt(_Dt.balance):'None'}</td></tr><tr><td class="k">Equity today</td><td class="v tp">${fmt(Math.max(0,_Dt.currentValue-_Dt.balance))}</td></tr><tr><td class="k">Rate</td><td class="v">${_Dt.rate>0?(_Dt.rate*100).toFixed(2)+'%':'N/A'}</td></tr><tr><td class="k">P&I / PITI</td><td class="v">${_Dt.piPayment>0?'$'+Math.round(_Dt.piPayment).toLocaleString()+' / ~$'+Math.round(_Dt.totalPayment).toLocaleString():'N/A'}</td></tr><tr><td class="k">Gross rent</td><td class="v">${_Dt.grossRent>0?fmt(_Dt.grossRent)+'/mo':'Not set'}</td></tr><tr><td class="k">Mgmt fee</td><td class="v tn">${_Dt.mgmtFee>0?'-'+(_Dt.mgmtFee*100).toFixed(0)+'%':'N/A'}</td></tr><tr><td class="k">Value at retirement</td><td class="v">${fmt(rr.dVal)}</td></tr><tr><td class="k">Loan at retirement</td><td class="v ${rr.dBal<1?'tp':'tn'}">${rr.dBal<1?'PAID OFF':fmt(rr.dBal)}</td></tr><tr><td class="k">Equity at retirement</td><td class="v tp">${fmt(rr.dEq)}</td></tr><tr><td class="k">Net rent/mo</td><td class="v tp">${fmt(rr.dNet)}/mo</td></tr>`;
+  const hy=rows.filter((_,i)=>i%2===0);
+  mC('homesChart',{type:'line',data:{labels:hy.map(r=>r.yr),datasets:[{label:'Eliot bal',data:hy.map(r=>Math.round(r.eBal)),borderColor:'#4f8ef7',borderWidth:2,pointRadius:0,fill:false},{label:'Devin bal',data:hy.map(r=>Math.round(r.dBal)),borderColor:'#22c87a',borderWidth:2,pointRadius:0,fill:false},{label:'Eliot val',data:hy.map(r=>Math.round(r.eVal)),borderColor:'#4f8ef7',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false},{label:'Devin val',data:hy.map(r=>Math.round(r.dVal)),borderColor:'#22c87a',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:scOpts()}});
+  // Viability
+  const viable=findEarliestViable(p.spainCost);
+  const netViable=findEarliestViable(p.spainCost);
+  const viaSpain=getSpainBudgetForYear(ry,p);
+  const viaSurp=rr.totalMo-viaSpain;
+  const netViaSurp=netMo-viaSpain;
+  const viaClass=netViaSurp>=0?'ok':netViaSurp>=-500?'warn':'bad';
+  document.getElementById('viaBanner').innerHTML=`<div class="via ${viaClass}"><div class="via-icon">${netViaSurp>=0?'&#9989;':'&#9888;&#65039;'}</div><div style="flex:1"><div class="via-title" style="color:${netViaSurp>=0?'var(--green)':'var(--amber)'}">${netViaSurp>=0?'Your bags could be packed by '+ry+' (age '+p.retireAge+').':'Not quite ready to leave yet — age '+p.retireAge+' has a gap.'}</div><div class="via-sub">Gross income: <b>${fmt(rr.totalMo)}/mo</b> &nbsp;&middot;&nbsp; Est. tax: <b>-${fmt(Math.round(taxMo))}/mo</b> &nbsp;&middot;&nbsp; Net: <b>${fmt(Math.round(netMo))}/mo</b><br>Spain budget at ${ry} (inflated from ${fmt(p.spainCost)}/mo): <b>${fmt(Math.round(viaSpain))}/mo</b><br>${netViaSurp>=0?'<b style="color:var(--green)">Net surplus: '+fmt(Math.round(netViaSurp))+'/mo</b> &nbsp;&middot;&nbsp; Gross surplus: '+fmt(Math.round(viaSurp))+'/mo':'<b style="color:var(--red)">Shortfall: '+fmt(Math.abs(Math.round(netViaSurp)))+'/mo</b> &nbsp;&middot;&nbsp; Earliest viable: age '+(viable||'67+')}</div></div></div>`;
+  const viaAges=Array.from({length:23},(_,i)=>45+i);
+  const viaData=viaAges.map(age=>{const cp={...p,retireAge:age,eliotLumps:{},devinLumps:{}};const{rows:vr,ry:vry}=project(cp);const vrr=vr.find(r=>r.yr===vry);return vrr?vrr.totalMo:0;});
+  const viaBudgets=viaAges.map(age=>Math.round(getSpainBudgetForYear(CY+(age-CA),p)));
+  mC('viaChart',{type:'line',data:{labels:viaAges,datasets:[{label:'Gross income',data:viaData,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.1)',borderWidth:2,pointRadius:3,fill:true},{label:'Spain budget',data:viaBudgets,borderColor:'#f87171',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc()},grid:{color:gc()}},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}}}}});
+  const vsb=Math.round(viaSpain),vsb20=Math.round(viaSpain*1.2);
+  document.getElementById('viaGrid').innerHTML=`<div class="pg pg3" style="margin-bottom:12px"><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:14px"><div style="font-size:10px;color:var(--text2)">Earliest viable (gross)</div><div style="font-size:28px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${viable||'67+'}</div><div style="font-size:10px;color:var(--text2)">gross income &ge; budget</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:14px"><div style="font-size:10px;color:var(--text2)">Earliest viable (after tax)</div><div style="font-size:28px;font-weight:700;color:var(--teal);font-family:'DM Mono',monospace">${netViable||'67+'}</div><div style="font-size:10px;color:var(--text2)">net income &ge; budget</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:14px"><div style="font-size:10px;color:var(--text2)">Your selected age</div><div style="font-size:28px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace">${p.retireAge}</div><div style="font-size:10px;color:${netViaSurp>=0?'var(--green)':'var(--red)'}">${netViaSurp>=0?fmt(Math.round(netViaSurp))+'/mo surplus':fmt(Math.abs(Math.round(netViaSurp)))+'/mo short'}</div></div></div>`;
+  document.getElementById('viaThresh').innerHTML=`<table class="sens-table"><thead><tr><th>Threshold</th><th>Required at ${ry}</th><th>Your status</th><th>Gap</th></tr></thead><tbody><tr><td>Spain budget - gross income<br><small style="color:var(--text3)">Today ${fmt(p.spainCost)}/mo inflated to ${fmt(vsb)}/mo</small></td><td>${fmt(vsb)}/mo</td><td class="${rr.totalMo>=vsb?'tp':'tn'}">${fmt(rr.totalMo)}/mo</td><td class="${rr.totalMo-vsb>=0?'tp':'tn'}">${fmt(rr.totalMo-vsb)}</td></tr><tr><td>Spain budget - after-tax net</td><td>${fmt(vsb)}/mo</td><td class="${netMo>=vsb?'tp':'tn'}">${fmt(netMo)}/mo</td><td class="${netMo-vsb>=0?'tp':'tn'}">${fmt(netMo-vsb)}</td></tr><tr><td>Spain budget + 20% buffer</td><td>${fmt(vsb20)}/mo</td><td class="${netMo>=vsb20?'tp':'tn'}">${fmt(netMo)}/mo</td><td class="${netMo-vsb20>=0?'tp':'tn'}">${fmt(netMo-vsb20)}</td></tr><tr><td>401k lasts to age 90</td><td>Return &gt; draw rate</td><td class="${p.rate401k>0.04?'tp':'tn'}">${(p.rate401k*100).toFixed(1)}% vs 4% draw</td><td class="${p.rate401k>0.04?'tp':'tn'}">${((p.rate401k-0.04)*100).toFixed(1)}% net</td></tr></tbody></table>`;
+  // Compare
+  const cAges=[52,57,62],cColors=['#f87171','#4f8ef7','#22c87a'];
+  const cData=cAges.map(age=>{const cp={...p,retireAge:age,eliotLumps:{},devinLumps:{}};const{rows:cr,ry:cry}=project(cp);const crr=cr.find(r=>r.yr===cry)||cr[cr.length-1];const cTax=estimateTax(crr.totalMo*12)/12;const cSpain=getSpainBudgetForYear(cry,{...p,retireAge:age});return{age,ry:cry,rows:cr,rr:crr,netMo:crr.totalMo-cTax,spain:cSpain};});
+  document.getElementById('scgrid').innerHTML=cData.map((s,i)=>{const sp=s.netMo-s.spain;return`<div class="scc ${s.age===p.retireAge?'active':''}" onclick="sv('retireAge',${s.age});render()"><div class="sc-age">${s.age}</div><div class="sc-yr">Retire ${s.ry}</div><div class="sc-row"><span class="sk">Gross income</span><span class="sv g">${fmt(s.rr.totalMo)}/mo</span></div><div class="sc-row"><span class="sk">Net (after tax)</span><span class="sv g">${fmt(s.netMo)}/mo</span></div><div class="sc-row"><span class="sk">Net worth</span><span class="sv">${fmtM(s.rr.totNW)}</span></div><div class="sc-row"><span class="sk">Cash</span><span class="sv a">${fmtK(s.rr.cash)}</span></div><div class="sc-row"><span class="sk">Spain surplus</span><span class="sv ${sp>=0?'g':'rr'}">${fmt(sp)}/mo</span></div></div>`;}).join('');
+  const cmpY=cData[0].rows.filter((_,i)=>i%2===0);
+  mC('cmpNW',{type:'line',data:{labels:cmpY.map(r=>r.yr),datasets:cData.map((s,i)=>({label:'Retire '+s.age,data:cData[i].rows.filter((_,j)=>j%2===0).map(r=>Math.round(r.totNW)),borderColor:cColors[i],borderWidth:2,pointRadius:0,fill:false}))},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:scOpts()}});
+  const retStart=Math.min(...cData.map(s=>s.ry));
+  const incY=cData[0].rows.filter(r=>r.yr>=retStart&&r.yr%2===0);
+  mC('cmpInc',{type:'line',data:{labels:incY.map(r=>r.yr),datasets:cData.map((s,i)=>({label:'Retire '+s.age,data:incY.map(yr=>{const row=s.rows.find(r=>r.yr===yr.yr);return row&&row.ret?Math.round(row.totalMo):0;}),borderColor:cColors[i],borderWidth:2,pointRadius:0,fill:false}))},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}}}}});
+  // Milestones
+  const ms=[];
+  ms.push({yr:ry,color:'#4f8ef7',title:'Retirement - Move to Spain',sub:'Age '+p.retireAge+' - Both properties now generating rental income',income:rr.totalMo});
+  const eliotPO=rows.find((r,i)=>i>0&&r.eBal<1&&rows[i-1].eBal>=1);
+  if(eliotPO)ms.push({yr:eliotPO.yr,color:'#22c87a',title:(window.ELIOT_OVERRIDE||ELIOT).nickname+' fully paid off',sub:'Property now 100% cash flow - no mortgage. +$'+Math.round((window.ELIOT_OVERRIDE||ELIOT).piPayment).toLocaleString()+'/mo boost',income:eliotPO.totalMo});
+  const ssBeg=rows.find(r=>r.ssOn&&!rows.find(rr2=>rr2.yr<r.yr&&rr2.ssOn));
+  if(ssBeg)ms.push({yr:ssBeg.yr,color:'#f59e0b',title:'Social Security begins (age '+p.ssAge+')',sub:'Adding $'+ssBeg.ssAmt.toLocaleString()+'/mo guaranteed income',income:ssBeg.totalMo});
+  const devinPO=rows.find((r,i)=>i>0&&r.dBal<1&&rows[i-1].dBal>=1);
+  if(devinPO)ms.push({yr:devinPO.yr,color:'#a78bfa',title:(window.DEVIN_OVERRIDE||DEVIN).nickname+' fully paid off',sub:'Property now 100% cash flow',income:devinPO.totalMo});
+  ms.sort((a,b)=>a.yr-b.yr);
+  document.getElementById('tlItems').innerHTML=ms.map(m=>`<div class="tl-item"><div class="tl-dot" style="background:${m.color}"></div><div class="tl-yr">${m.yr} (age ${CA+(m.yr-CY)})</div><div class="tl-title">${m.title}</div><div class="tl-sub">${m.sub}</div><div class="tl-income">Monthly income at this point: ${fmt(m.income)}/mo</div></div>`).join('');
+  mC('tlChart',{type:'line',data:{labels:rows.filter(r=>r.yr>=ry&&r.yr%2===0).map(r=>r.yr),datasets:[{label:'Income',data:rows.filter(r=>r.yr>=ry&&r.yr%2===0).map(r=>Math.round(r.totalMo)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.08)',borderWidth:2,pointRadius:0,fill:true},{label:'Spain budget',data:rows.filter(r=>r.yr>=ry&&r.yr%2===0).map(r=>Math.round(getSpainBudgetForYear(r.yr,p))),borderColor:'#f87171',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}}}}});
+  // Sensitivity
+  const base=rr.totalMo;
+  const sensTests=[
+    {l:'Retire 2 yrs later (age '+(p.retireAge+2)+')',fn:()=>{const cp={...p,retireAge:p.retireAge+2,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'Retire 2 yrs earlier (age '+Math.max(45,p.retireAge-2)+')',fn:()=>{const cp={...p,retireAge:Math.max(45,p.retireAge-2),eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'Draw SS at 70 (vs current)',fn:()=>{const cp={...p,ssAge:70,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'Draw SS at 62 (vs current)',fn:()=>{const cp={...p,ssAge:62,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'401k return 8% (vs '+( p.rate401k*100).toFixed(1)+'%)',fn:()=>{const cp={...p,rate401k:.08,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'401k return 5% (vs '+(p.rate401k*100).toFixed(1)+'%)',fn:()=>{const cp={...p,rate401k:.05,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'Rent growth 4% (vs '+(p.rentGrowth*100).toFixed(1)+'%)',fn:()=>{const cp={...p,rentGrowth:.04,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+    {l:'12 months rented (vs '+Math.round(p.moRented*12)+')',fn:()=>{const cp={...p,moRented:1,eliotLumps:{},devinLumps:{}};const{rows:r,ry:ry2}=project(cp);return r.find(x=>x.yr===ry2)?.totalMo||0;}},
+  ];
+  const sensRows=sensTests.map(t=>{const ni=t.fn();return{l:t.l,inc:ni,delta:ni-base};});
+  document.getElementById('sensTbody').innerHTML=sensRows.map(r=>`<tr><td style="font-family:'DM Sans',sans-serif">${r.l}</td><td class="${r.delta>0?'tp':r.delta<0?'tn':'ta'}" style="font-weight:700">${r.delta>0?'+':''}${fmt(r.delta)}/mo</td><td class="${r.delta>0?'tp':r.delta<0?'tn':'ta'}">${r.delta>0?'+':r.delta<0?'':''}${fmt(r.delta*120)}</td><td style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text2)">${Math.abs(r.delta)>300?'High impact':Math.abs(r.delta)>100?'Medium':'Low'}</td></tr>`).join('');
+  mC('sensChart',{type:'bar',data:{labels:sensRows.map(r=>r.l.length>35?r.l.slice(0,35)+'...':r.l),datasets:[{data:sensRows.map(r=>Math.round(r.delta)),backgroundColor:sensRows.map(r=>r.delta>=0?'rgba(34,200,122,.7)':'rgba(248,113,113,.7)'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}},y:{ticks:{color:tc(),font:{size:10}},grid:{color:gc()}}}}});
+  // Tax & Runway
+  const annual401k=rr.draw4*12,annualTotal=rr.totalMo*12;
+  const taxBreakdown=[['Rental income (Denver)',rr.eNet*12],['Rental income (Devinney)',rr.dNet*12],['401k withdrawals',annual401k],['Social Security (85% taxable)',rr.ssAmt*12*.85]];
+  const totTaxable=taxBreakdown.reduce((s,[,v])=>s+v,0),totTax=estimateTax(totTaxable);
+  document.getElementById('taxTable').innerHTML=`<div>${taxBreakdown.map(([l,v])=>`<div class="tax-row"><span>${l}</span><span style="font-family:'DM Mono',monospace">${fmt(v)}/yr</span></div>`).join('')}<div class="tax-row" style="font-weight:600"><span>Total taxable</span><span style="font-family:'DM Mono',monospace">${fmt(totTaxable)}/yr</span></div><div class="tax-row" style="color:var(--red)"><span>Est. federal tax</span><span style="font-family:'DM Mono',monospace">-${fmt(totTax)}/yr (${(totTax/totTaxable*100).toFixed(1)}% eff.)</span></div><div class="tax-row" style="font-weight:700;color:var(--green)"><span>Net annual</span><span style="font-family:'DM Mono',monospace">${fmt(annualTotal-totTax)}/yr</span></div></div>`;
+  document.getElementById('taxNote').textContent='Simplified US federal estimate. As a US citizen in Spain, 401k withdrawals are US-taxed. Spain Beckham Law: flat 24% on Spain-source income for first 6 years. Consult a cross-border tax advisor.';
+  document.getElementById('taxAfter').innerHTML=`<div class="pg pg3"><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:14px"><div style="font-size:10px;color:var(--text2)">Gross monthly</div><div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace">${fmt(rr.totalMo)}</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:14px"><div style="font-size:10px;color:var(--text2)">Est. tax</div><div style="font-size:22px;font-weight:700;color:var(--red);font-family:'DM Mono',monospace">-${fmt(totTax/12)}</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:14px"><div style="font-size:10px;color:var(--text2)">Net monthly</div><div style="font-size:22px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${fmt(rr.totalMo-totTax/12)}</div></div></div>`;
+  const totNWNow=p.curCash+p.cur401k+(ELIOT.currentValue-ELIOT.balance)+(DEVIN.currentValue-DEVIN.balance);
+  const runwayYrs=(totNWNow/p.spainCost/12).toFixed(1);
+  document.getElementById('runwayDisplay').innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:48px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${runwayYrs}</div><div style="font-size:13px;color:var(--text2);margin-top:4px">years of runway</div><div style="font-size:11px;color:var(--text3);margin-top:6px">${fmtM(totNWNow)} net worth &divide; ${fmt(p.spainCost)}/mo Spain budget</div><div style="margin-top:14px;background:var(--bg3);border-radius:8px;height:10px;overflow:hidden"><div style="height:100%;width:${Math.min(100,runwayYrs/50*100)}%;background:var(--green);border-radius:8px"></div></div></div>`;
+  document.getElementById('runwayNote').textContent='If all income stopped today, your current net worth of '+fmtM(totNWNow)+' would sustain '+fmt(p.spainCost)+'/mo Spain lifestyle for '+runwayYrs+' years. This is your financial resilience floor.';
+  // Year table
+  const lYrs=new Set([...Object.keys(p.eliotLumps||{}).map(Number),...Object.keys(p.devinLumps||{}).map(Number)]);
+  let trows=TV==='retire'?rows.filter(r=>Math.abs(r.age-p.retireAge)<=6):rows.filter(r=>r.yr%2===0||r.notes.length>0||lYrs.has(r.yr));
+  document.getElementById('ytbody').innerHTML=trows.map(r=>{const gTax=r.ret?estimateTax(r.totalMo*12)/12:0;const net=r.totalMo-gTax;const spainThatYr=r.ret?getSpainBudgetForYear(r.yr,p):0;const sp=r.ret?net-spainThatYr:null;return`<tr class="${r.notes.includes('Retirement')?'rr':''}"><td>${r.yr}</td><td>${r.age}</td><td class="${r.cash<30000?'tn':r.cash<80000?'ta':''}">${fmt(r.cash)}</td><td>${fmt(r.k401)}</td><td class="${r.eBal<1?'tp':'tn'}">${r.eBal<1?'Paid off':fmt(r.eBal)}</td><td class="tp">${fmt(r.eEq)}</td><td class="${r.dBal<1?'tp':'tn'}">${r.dBal<1?'Paid off':fmt(r.dBal)}</td><td class="tp">${fmt(r.dEq)}</td><td style="font-weight:600">${fmt(r.totNW)}</td><td class="${r.ret?'tp':'tm'}">${r.ret?fmt(r.totalMo)+'/mo':'--'}</td><td class="${r.ret?'tn':'tm'}">${r.ret?'-'+fmt(gTax)+'/mo':'--'}</td><td class="${r.ret?'tp':'tm'}">${r.ret?fmt(net)+'/mo':'--'}</td><td class="${sp===null?'tm':sp>=0?'tp':'tn'}">${sp===null?'--':fmt(sp)+'/mo'}</td><td class="tm">${r.notes.map(n=>`<span class="badge ${n.includes('Retire')?'bb':n.includes('paid')?'bg':n.includes('SS')?'ba':'br'}">${n}</span>`).join(' ')}</td></tr>`;}).join('');
+}
+
+function runMonteCarlo(){
+  const p=getP();
+  document.getElementById('mcStatus').textContent='Running 500 simulations...';
+  setTimeout(()=>{
+    const N=500,results=[];
+    for(let i=0;i<N;i++){
+      const r401k=p.rate401k+(Math.random()-.5)*.08,rApp=p.appRate+(Math.random()-.5)*.04,rRent=p.rentGrowth+(Math.random()-.5)*.03;
+      const cp={...p,rate401k:Math.max(.02,r401k),appRate:Math.max(.01,rApp),rentGrowth:Math.max(.005,rRent),eliotLumps:{},devinLumps:{}};
+      const{rows}=project(cp);const at90=rows.find(r=>r.age===90);const retRow=rows.find(r=>r.yr===CY+(p.retireAge-CA));
+      results.push({nw90:at90?at90.totNW:0,rows:rows.filter((_,j)=>j%2===0)});
+    }
+    results.sort((a,b)=>a.nw90-b.nw90);
+    const pct=r=>results[Math.floor(r*N)];
+    const successRate=results.filter(r=>r.nw90>0).length/N*100;
+    const p10=pct(.1),p50=pct(.5),p90=pct(.9);
+    document.getElementById('mcMetrics').innerHTML=`<div class="metric g"><div class="ml">Success probability (to age 90)</div><div class="mv g">${successRate.toFixed(0)}%</div><div class="ms">money lasts to age 90</div></div><div class="metric"><div class="ml">Median NW at age 90</div><div class="mv">${fmtM(p50.nw90)}</div><div class="ms">50th percentile</div></div><div class="metric a"><div class="ml">10th percentile NW at 90</div><div class="mv a">${fmtM(p10.nw90)}</div><div class="ms">bad luck scenario</div></div><div class="metric t"><div class="ml">90th percentile NW at 90</div><div class="mv" style="color:var(--teal)">${fmtM(p90.nw90)}</div><div class="ms">good luck scenario</div></div>`;
+    const outcomes=[{l:'Excellent (>$3M at 90)',c:'#22c87a',n:results.filter(r=>r.nw90>3e6).length},{l:'Good ($1M-$3M)',c:'#4f8ef7',n:results.filter(r=>r.nw90>=1e6&&r.nw90<=3e6).length},{l:'Ok ($0-$1M)',c:'#f59e0b',n:results.filter(r=>r.nw90>0&&r.nw90<1e6).length},{l:'Depleted (<$0)',c:'#f87171',n:results.filter(r=>r.nw90<=0).length}];
+    document.getElementById('mcBars').innerHTML=outcomes.map(o=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px"><span>${o.l}</span><span>${o.n}/${N} (${(o.n/N*100).toFixed(0)}%)</span></div><div class="mc-bar"><div class="mc-fill" style="width:${o.n/N*100}%;background:${o.c}"><span class="mc-label">${(o.n/N*100).toFixed(0)}%</span></div></div></div>`).join('');
+    const refYrs=p10.rows.map(r=>r.yr);
+    mC('mcChart',{type:'line',data:{labels:refYrs,datasets:[{label:'90th',data:p90.rows.filter(r=>refYrs.includes(r.yr)).map(r=>Math.round(r.totNW)),borderColor:'#22c87a',borderWidth:1.5,pointRadius:0,fill:false,borderDash:[3,2]},{label:'50th',data:p50.rows.filter(r=>refYrs.includes(r.yr)).map(r=>Math.round(r.totNW)),borderColor:'#4f8ef7',borderWidth:2.5,pointRadius:0,fill:false},{label:'10th',data:p10.rows.filter(r=>refYrs.includes(r.yr)).map(r=>Math.round(r.totNW)),borderColor:'#f87171',borderWidth:1.5,pointRadius:0,fill:false,borderDash:[3,2]}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false}},scales:scOpts()}});
+    document.getElementById('mcResults').style.display='block';
+    document.getElementById('mcStatus').textContent='Done - '+successRate.toFixed(0)+'% success rate';
+  },50);
+}
+
+function renderP3(){
+  const retireYr=CY+(+gv('retireAge')-CA);
+  const buyYrSlider=document.getElementById('p3BuyYear');
+  if(buyYrSlider){buyYrSlider.min=retireYr;if(+buyYrSlider.value<retireYr)buyYrSlider.value=retireYr;}
+  const buyYr=+gv('p3BuyYear')||retireYr,buyAge=CA+(buyYr-CY);
+  const price=+gv('p3Price')||350000,downPct=(+gv('p3Down')||30)/100,rate=(+gv('p3Rate')||3.5)/100,termYrs=+gv('p3Term')||20,rentAlt=+gv('p3Rent')||1800,hoa=+gv('p3Mgr')||300,appRate=(+gv('p3AppRate')||3.5)/100;
+  const el=document.getElementById('d-p3y');if(el)el.innerHTML=buyYr+' <small>age '+buyAge+'</small>';
+  const el2=document.getElementById('d-p3d');if(el2)el2.innerHTML=Math.round(downPct*100)+'<small>%</small>';
+  const el3=document.getElementById('d-p3r');if(el3)el3.innerHTML=(rate*100).toFixed(2)+'<small>%</small>';
+  const el4=document.getElementById('d-p3t');if(el4)el4.innerHTML=termYrs+'<small> yrs</small>';
+  const el5=document.getElementById('d-p3a');if(el5)el5.innerHTML=(appRate*100).toFixed(1)+'<small>%/yr</small>';
+  const loanAmt=price*(1-downPct),mr=rate/12,n=termYrs*12;
+  const pmt=n>0?loanAmt*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1):0;
+  const downAmt=price*downPct,payoffYr=buyYr+termYrs;
+  const p=getP();const{rows}=project(p);
+  const startYr=Math.min(buyYr,retireYr);
+  const years=Array.from({length:40},(_,i)=>startYr+i);
+  const rentCosts=[],ownCosts=[],surpRent=[],surpOwn=[];
+  years.forEach((yr,i)=>{
+    const rentThisYr=rentAlt*Math.pow(1+p.spainInflation,Math.max(0,yr-buyYr));
+    const ownMo=(yr>=buyYr&&yr<payoffYr)?pmt+hoa:(yr>=payoffYr?hoa:0);
+    rentCosts.push(Math.round(rentThisYr));ownCosts.push(Math.round(ownMo));
+    const row=rows.find(r=>r.yr===yr);
+    if(row){const tax=estimateTax(row.totalMo*12)/12,netInc=row.totalMo-tax;const inflatedTotal=p.spainCost*Math.pow(1+p.spainInflation,Math.max(0,yr-CY));const rentInflated=rentAlt*Math.pow(1+p.spainInflation,Math.max(0,yr-CY));const other=Math.max(0,inflatedTotal-rentInflated);surpRent.push(Math.round(netInc-(rentThisYr+other)));surpOwn.push(Math.round(netInc-(ownMo+other)));}
+  });
+  let cumR=0,cumO=downAmt,breakevenYr=null;
+  years.forEach((yr,i)=>{cumR+=rentCosts[i]*12;cumO+=ownCosts[i]*12;if(!breakevenYr&&cumO<cumR)breakevenYr=yr;});
+  const propValueAtPayoff=price*Math.pow(1+appRate,payoffYr-buyYr);
+  const avgRent10=rentCosts.slice(0,10).reduce((a,b)=>a+b,0)/10;
+  const avgOwn10=ownCosts.slice(0,10).reduce((a,b)=>a+b,0)/10;
+  const saving10=avgRent10-avgOwn10;
+  const sumEl=document.getElementById('p3Summary');
+  if(sumEl)sumEl.innerHTML=`<div class="pg pg3" style="margin-bottom:12px"><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:13px"><div style="font-size:10px;color:var(--text2)">Down payment needed</div><div style="font-size:20px;font-weight:700;color:var(--amber);font-family:'DM Mono',monospace">${fmt(downAmt)}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">from cash at retirement</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:13px"><div style="font-size:10px;color:var(--text2)">Monthly mortgage+HOA</div><div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace">${fmt(pmt+hoa)}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">vs renting ${fmt(rentAlt)}/mo today</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:13px"><div style="font-size:10px;color:var(--text2)">Avg monthly saving yr 1-10</div><div style="font-size:20px;font-weight:700;color:${saving10>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${saving10>=0?'+':''}${fmt(saving10)}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">buying vs renting</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:13px"><div style="font-size:10px;color:var(--text2)">Breakeven vs renting</div><div style="font-size:20px;font-weight:700;color:var(--teal);font-family:'DM Mono',monospace">${breakevenYr||'Never'}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">${breakevenYr?'yr '+breakevenYr+' (age '+(CA+(breakevenYr-CY))+')':'renting stays cheaper'}</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:13px"><div style="font-size:10px;color:var(--text2)">Mortgage paid off</div><div style="font-size:20px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${payoffYr}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">age ${CA+(payoffYr-CY)} then HOA only</div></div><div style="text-align:center;background:var(--bg3);border-radius:12px;padding:13px"><div style="font-size:10px;color:var(--text2)">Est. property value at payoff</div><div style="font-size:20px;font-weight:700;color:var(--purple);font-family:'DM Mono',monospace">${fmt(Math.round(propValueAtPayoff))}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">${(appRate*100).toFixed(1)}%/yr Spanish appreciation</div></div></div>`;
+  mC('p3Chart',{type:'line',data:{labels:years,datasets:[{label:'Renting',data:rentCosts,borderColor:'#f87171',borderWidth:2,borderDash:[4,3],pointRadius:0,fill:false},{label:'Owning',data:ownCosts.map((v,i)=>years[i]<payoffYr?v:null),borderColor:'#2dd4bf',borderWidth:2,pointRadius:0,fill:false},{label:'Post-payoff',data:ownCosts.map((v,i)=>years[i]>=payoffYr?v:null),borderColor:'#22c87a',borderWidth:2.5,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}}}}});
+  if(surpRent.length){mC('p3SurpChart',{type:'line',data:{labels:years.slice(0,surpRent.length),datasets:[{label:'Surplus renting',data:surpRent,borderColor:'#f59e0b',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false},{label:'Surplus owning',data:surpOwn,borderColor:'#4f8ef7',borderWidth:2,pointRadius:0,backgroundColor:'rgba(79,142,247,.06)',fill:true}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}}}}});}
+}
+
+function renderPD(){
+  const cby=getCBY();
+  // Gate paydown UI: disable add-payment + show note for properties with no loan
+  ['eliot','devin'].forEach(prop=>{
+    const ov = prop==='eliot' ? (window.ELIOT_OVERRIDE||ELIOT) : (window.DEVIN_OVERRIDE||DEVIN);
+    const hasLoan = ov && ov.balance>0;
+    const addBtn = document.querySelector(`.pdadd[onclick="addPmt('${prop}')"]`);
+    if(addBtn){
+      addBtn.style.opacity = hasLoan ? '1' : '0.4';
+      addBtn.style.pointerEvents = hasLoan ? 'auto' : 'none';
+      addBtn.title = hasLoan ? '' : 'No loan balance to pay down';
+    }
+  });
+  ['eliot','devin'].forEach(prop=>{
+    const isE=prop==='eliot',stdYr=isE?2042:2050;
+    const list=document.getElementById(prop+'-pdlist');if(!list)return;
+    const lbm=getLBY(prop);const minYr=CY+1,maxYr=stdYr-1;
+    list.innerHTML=LP[prop].map(pp=>{
+      const cb=(cby[pp.year]||0)+(pp.amount||0),lb=Math.round((lbm[pp.year]||0)+(pp.amount||0));
+      const ob=(pp.amount||0)>cb,ol=(pp.amount||0)>lb,maxP=Math.min(lb,Math.floor(cb));
+      const idx=LP[prop].indexOf(pp);
+      return`<div class="pdrow" style="${ob||ol?'border-color:var(--red);background:rgba(248,113,113,.06)':''}"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:11px;color:var(--text2)">Amount</span><input type="number" value="${pp.amount||''}" min="0" step="1000" placeholder="e.g. 25000" style="width:115px" onchange="onLC('${prop}',${pp.id},'amount',this.value)" onblur="onLC('${prop}',${pp.id},'amount',this.value)"><span style="font-size:11px;color:var(--text2)">In year</span><select style="width:76px" onchange="onLC('${prop}',${pp.id},'year',this.value)">${Array.from({length:maxYr-minYr+1},(_,i)=>minYr+i).map(y=>`<option value="${y}"${y===pp.year?' selected':''}>${y}</option>`).join('')}</select>${maxP>0?`<button class="pofb" onclick="(function(){var it=LP['${prop}'].find(x=>x.id===${pp.id});if(it)it.amount=${maxP};var ins=document.querySelectorAll('#${prop}-pdlist input[type=number]');if(ins[${idx}])ins[${idx}].value=${maxP};renderPD();})()">Pay off remaining</button>`:''}<button class="pdrm" onclick="rmPmt('${prop}',${pp.id})" style="margin-left:auto">&times;</button></div><div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:5px;font-size:10px"><span style="color:var(--text3)">Loan bal in ${pp.year}: <span style="font-family:monospace;font-weight:600;color:${lb>0?'var(--amber)':'var(--green)'}">${lb>0?'$'+lb.toLocaleString():'PAID OFF'}</span></span><span style="color:${ob?'var(--red)':'var(--text3)'}">Cash avail: <span style="font-family:monospace;font-weight:600;color:${ob?'var(--red)':'var(--green)'}">$${Math.round(cb).toLocaleString()}</span></span>${ob?'<span style="color:var(--red);font-weight:600">&#9888; Exceeds cash</span>':''}${ol&&!ob?'<span style="color:var(--red);font-weight:600">&#9888; Exceeds loan</span>':''}</div></div>`;
+    }).join('');
+    const b0=isE?ELIOT.balance:DEVIN.balance,rate=isE?ELIOT.rate:DEVIN.rate,pi=isE?ELIOT.piPayment:DEVIN.piPayment;
+    const lumps=getLM(prop),hasL=Object.keys(lumps).length>0;
+    const sB=amort(b0,rate,pi,{},40),sE=amort(b0,rate,pi,lumps,40);
+    const iB=sB.findIndex(b=>b===0),iE=sE.findIndex(b=>b===0),yS=(iB>=0&&iE>=0)?iB-iE:0;
+    let intB=0,intEx=0,bB=b0,bEx=b0;const mr2=rate/12;
+    for(let y=0;y<40;y++){const yr=CY+y;if(y>0){for(let m=0;m<12;m++){if(bB>0){const i=bB*mr2;intB+=i;bB=Math.max(0,bB-Math.max(0,pi-i));}if(bEx>0){const i=bEx*mr2;intEx+=i;bEx=Math.max(0,bEx-Math.max(0,pi-i));}}}if(lumps[yr]&&bEx>0)bEx=Math.max(0,bEx-lumps[yr]);if(bB<=0&&bEx<=0)break;}
+    const intS=Math.max(0,intB-intEx),totL=Object.values(lumps).reduce((a,b)=>a+b,0);
+    const pv=document.getElementById(prop[0]+'-pov'),ys=document.getElementById(prop[0]+'-ys'),is=document.getElementById(prop[0]+'-is'),tl=document.getElementById(prop[0]+'-tl');
+    if(hasL&&iE>=0){if(pv)pv.textContent=CY+iE;if(pv)pv.className='prv';if(ys){ys.textContent=yS>0?yS+' yr'+(yS!==1?'s':'')+' early':'Same';ys.className=yS>0?'prv':'prv mt';}if(is){is.textContent=yS>0?'$'+Math.round(intS).toLocaleString():'--';is.className=yS>0?'prv':'prv mt';}if(tl)tl.textContent='Total: $'+Math.round(totL).toLocaleString()+' - deducted from cash in year(s) paid';}
+    else{if(pv){pv.textContent='Standard ('+stdYr+')';pv.className='prv mt';}if(ys){ys.textContent='--';ys.className='prv mt';}if(is){is.textContent='--';is.className='prv mt';}if(tl)tl.textContent='';}
+    const pdL=Array.from({length:40},(_,i)=>CY+i),color=isE?'#4f8ef7':'#22c87a';
+    mC(isE?'pdE':'pdD',{type:'line',data:{labels:pdL,datasets:[{label:'Standard',data:sB.map(v=>Math.round(v)),borderColor:'#555d6b',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false},{label:'With lumps',data:sE.map(v=>Math.round(v)),borderColor:color,borderWidth:2,pointRadius:0,fill:false},...Object.keys(lumps).map(yr=>({label:'Lump '+yr,data:pdL.map(y=>y==yr?sE[pdL.indexOf(y)]:null),borderColor:color,backgroundColor:color,pointRadius:pdL.map(y=>y==yr?7:0),showLine:false}))]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc(),maxTicksLimit:8,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:fmtAx,color:tc()},grid:{color:gc()}}}}});
+  });
+  render();
+}
+
+function generateAdvice(){
+  const p=getP(),ry=CY+(p.retireAge-CA);
+  const{rows}=project(p);
+  const rr=rows.find(r=>r.yr===ry)||rows[rows.length-1];
+  const taxMo=estimateTax(rr.totalMo*12)/12,netMo=rr.totalMo-taxMo;
+  const spainBudget=getSpainBudgetForYear(ry,p),surplusMo=netMo-spainBudget;
+  const eliotPO=rows.find((r,i)=>i>0&&r.eBal<1&&rows[i-1].eBal>=1);
+  const devinPO=rows.find((r,i)=>i>0&&r.dBal<1&&rows[i-1].dBal>=1);
+  const devinSaleEquity=Math.round(rr.dVal-rr.dBal),eliotSaleEquity=Math.round(rr.eVal-rr.eBal);
+  const el=document.getElementById('advisorContent');
+  el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text2)"><div style="font-size:24px;margin-bottom:8px">&#8987;</div><div>Analyzing your financial picture...</div></div>';
+  setTimeout(()=>{
+    const sections=[];
+    function adv(c,t){return`<span style="color:${c};font-weight:600">${t}</span>`;}
+    function sec(icon,title,body){sections.push(`<div class="adv-sec"><div class="adv-sec-title"><span>${icon}</span>${title}</div><div class="adv-body">${body}</div></div>`);}
+    function bul(items){return'<ul>'+items.filter(Boolean).map(i=>`<li>${i}</li>`).join('')+'</ul>';}
+    const ss67=calcSS(67),ss62=calcSS(62),ss70=calcSS(70);
+    const k401At90=rows.find(r=>r.age===90);
+    // Readiness
+    let rd='';
+    if(surplusMo>=1000)rd=`${adv('var(--green)','Strong position.')} At age ${p.retireAge} you project ${fmt(netMo)}/mo net vs ${fmt(Math.round(spainBudget))}/mo Spain budget - a ${adv('var(--green)',fmt(surplusMo)+'/mo surplus')}. You have real flexibility.`;
+    else if(surplusMo>=0)rd=`${adv('var(--amber)','Viable but tight.')} ${fmt(netMo)}/mo net barely covers ${fmt(Math.round(spainBudget))}/mo budget. ${adv('var(--amber)',fmt(surplusMo)+'/mo surplus')} leaves little room for surprises.`;
+    else rd=`${adv('var(--red)','Shortfall.')} At age ${p.retireAge} you are ${adv('var(--red)',fmt(Math.abs(surplusMo))+'/mo short')} after tax. Consider retiring at age ${p.retireAge+2} or later.`;
+    if(k401At90&&k401At90.k401<100000)rd+=` ${adv('var(--red)','&#9888; 401k risk:')} shows strain by age 90 at current draw rate.`;
+    sec('&#127919;','Retirement Readiness',rd);
+    // Property strategy
+    const eliotYield=(rr.eNet*12/ELIOT.currentValue*100).toFixed(1);
+    const devinYield=(rr.dNet*12/DEVIN.currentValue*100).toFixed(1);
+    let prop=`<b>Eliot St (Denver)</b> - `;
+    if(rr.eBal<1)prop+=`${adv('var(--green)','Keep and rent.')} Paid off by retirement, generating ${fmt(rr.eNet)}/mo pure cash flow. Gross yield ${eliotYield}%. Never sell a paid-off rental.`;
+    else prop+=`${adv('var(--green)','Keep and rent.')} Net rent ${fmt(rr.eNet)}/mo with ${fmt(rr.eBal)} remaining at 3.25%. Gross yield ${eliotYield}%. Positive cash flow - no reason to sell.<br><br>`;
+    prop+=`<br><br><b>Devinney Ct (Arvada)</b> - `;
+    if(rr.dBal<1)prop+=`${adv('var(--green)','Keep and rent.')} Paid off, generating ${fmt(rr.dNet)}/mo. Pure passive income.`;
+    else prop+=`${adv('var(--green)','Keep - do not sell.')} You owe ${fmt(rr.dBal)} at ${adv('var(--green)','2.75% - the cheapest debt you will ever carry.')} Selling unlocks ${fmt(devinSaleEquity)} equity but loses a 2.75% fixed rate forever. Net rent ${fmt(rr.dNet)}/mo. Keep it.`;
+    sec('&#127968;','Property Strategy - Sell vs Keep',prop);
+    // SS timing
+    let ss='';
+    if(p.retireAge<=54)ss=`${adv('var(--green)','Strongly recommend waiting until 70.')} You retire at ${p.retireAge} with ${70-p.retireAge} years before max SS age. At 70 you get ${adv('var(--green)','$'+ss70+'/mo')} vs $${ss62}/mo at 62 - a ${adv('var(--green)','$'+(ss70-ss62)+'/mo difference for life.')} Rental and 401k income covers the gap. Let SS compound.`;
+    else if(p.retireAge<=60)ss=`${adv('var(--green)','Recommend 67 or 70.')} At 67: $${ss67}/mo. At 70: $${ss70}/mo. If your rental and 401k covers Spain comfortably, ${adv('var(--green)','wait to 70 for the +24% boost')} - it is an 8%/yr guaranteed return.`;
+    else ss=`At retirement age ${p.retireAge}, drawing at 67 as planned gives $${ss67}/mo. The 70-age bonus adds $${ss70-ss67}/mo for life - consider if surplus is strong enough to wait.`;
+    sec('&#127963;&#65039;','Social Security - When to Draw',ss);
+    // 401k
+    let k4='';
+    if(p.retireAge<55)k4=`${adv('var(--red)','&#9888; Early access penalty:')} Retiring before 55 means 10% penalty on 401k until 59.5 (unless using Rule of 55 from the employer plan you leave). You need ${59-p.retireAge} years of cash and rental income to bridge this gap.<br><br>`;
+    else if(p.retireAge<59.5)k4=`${adv('var(--amber)','Rule of 55 applies:')} You can access this 401k penalty-free via Rule of 55 - confirm with your plan administrator.<br><br>`;
+    k4+=`At retirement, ${adv('var(--green)',fmtM(rr.k401)+' in your 401k')} throws off ${fmt(rr.draw4)}/mo at 4% draw. With ${(p.rate401k*100).toFixed(1)}% growth vs 4% draw, net growth is ~${((p.rate401k-0.04)*100).toFixed(1)}%/yr - ${p.rate401k>0.04?adv('var(--green)','balance grows slowly over time.'):adv('var(--red)','balance will gradually decline.')}`;;
+    sec('&#128200;','401k Strategy and Sustainability',k4);
+    // Cash
+    const cashAtRetire=Math.round(rr.cash),excessCash=Math.max(0,cashAtRetire-100000);
+    const cashPts=[`${adv('var(--green)','Keep $80-120k as emergency fund')} - covers 12-18 months Spain living costs`,`${adv('var(--amber)','Do NOT pay down Eliot 3.25% or Devinney 2.75% early')} - your cash earns 2.5%+ and rental income covers them`,buySpain?`${adv('var(--amber)','Spain property down payment:')} budget ${fmt(Math.round(+gv('p3Price')*(+gv('p3Down')/100)))} from cash`:`${adv('var(--green)','Rent in Spain first for 12-18 months')} to find the right city before committing to purchase`,`${adv('var(--green)','Excess cash above emergency fund:')} consider taxable brokerage or short-term treasuries`];
+    sec('&#128181;','Cash Deployment Priority at Retirement',`At retirement you hold ${adv('var(--amber)',fmt(cashAtRetire))} in cash.`+bul(cashPts));
+    // Spain family budget
+    const spainPts=[`${adv('var(--red)','International school: EUR 6,000-18,000/yr per child')} in major cities - could add $1,500-3,000/mo`,`${adv('var(--green)','Spanish public school is free and high quality')} - kids adapt fast and it saves $1,500-2,500/mo`,`${adv('var(--green)','Best value family cities:')} Valencia, Alicante, Murcia - lower cost than Madrid/Barcelona`,`${adv('var(--amber)','Private health insurance for family of 4:')} $200-500/mo gives faster access alongside free public care`,`${adv('var(--green)','Beckham Law (first 6 years):')} flat 24% on Spain-source income - get a cross-border tax advisor before moving`];
+    sec('&#127477;&#127480;','Spain Family Budget Reality Check',`Your budget of ${fmt(p.spainCost)}/mo inflates to ${adv('var(--amber)',fmt(Math.round(spainBudget)))}/mo by ${ry}. Key factors for a family of 4:`+bul(spainPts));
+    // Risks
+    const risks=[surplusMo<500?`${adv('var(--red)','Thin surplus margin')} - a 10% rent drop or unexpected expense wipes your cushion`:null,p.retireAge<55?`${adv('var(--red)','401k access gap')} - ${59-p.retireAge} years before penalty-free access`:null,p.ssAge===0?`${adv('var(--amber)','Not drawing SS')} - leaving $${ss67}/mo on the table indefinitely`:null,`${adv('var(--amber)','Currency risk')} - Euro/USD fluctuation affects Spain purchasing power. 10% USD weakening = +$${Math.round(spainBudget*0.1)}/mo cost`,`${adv('var(--amber)','Concentration risk')} - most of your net worth is in Denver real estate. Both properties affected by same local market`,k401At90&&k401At90.k401<200000?`${adv('var(--red)','401k longevity')} - projects below $200k by age 90 under current assumptions`:null];
+    sec('&#9888;&#65039;','Top Risks to Monitor',bul(risks));
+    // Action plan
+    const actions=[p.retireAge>CY-CA+3?`${adv('var(--green)','Now to retirement:')} Max 401k at $23,500/yr. Add $20k/yr to cash. Optimize Denver rental`:`${adv('var(--green)','Now:')} Focus on cash savings and rental optimization`,`${adv('var(--green)','1 year before retiring:')} Confirm SS estimate at ssa.gov. Start Spanish NIE number process. Vet property managers for both US homes`,`${adv('var(--green)','At retirement:')} Hand off both properties to managers before departure. Keep 12 months cash reserve`,p.ssAge===70?`${adv('var(--green)','Ages '+p.retireAge+'-70:')} Live on rental + 401k draws. Do not touch SS - let it compound to maximum benefit`:null,buySpain?`${adv('var(--amber)','Spain property:')} Get mortgage pre-approval from Spanish bank first. Non-residents typically need 30-40% down`:`${adv('var(--green)','Spain arrival:')} Rent for 12-18 months first to find the right city before buying`,eliotPO?`${adv('var(--green)',eliotPO.yr+':')} Eliot pays off - cash flow jumps by $${Math.round(ELIOT.piPayment)}/mo. Reinvest surplus or upgrade lifestyle`:null];
+    sec('&#9989;','Prioritized Action Plan',bul(actions));
+    el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px"><div style="font-size:11px;color:var(--text3)">Based on: age ${p.retireAge} &middot; salary $${p.curSalary.toLocaleString()} &middot; cash $${p.curCash.toLocaleString()} &middot; 401k $${p.cur401k.toLocaleString()}</div><button onclick="generateAdvice()" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer">&#8634; Refresh</button></div>${sections.join('')}`;
+  },400);
+}
+
+(async () => {
+  const ok = await initAuth();
+  if (!ok) return;
+  // Load saved preferences first, then render
+  // (loadUserData will call render() again with correct Supabase values)
+  load();
+  // Small delay to ensure Chart.js is ready
+  setTimeout(() => { render(); renderPD(); renderP3(); }, 50);
+  // Re-update name display after data loads (profile name overrides Google name)
+  const nameEl = document.getElementById('userDisplayName');
+  const subEl = document.getElementById('userSubtitle');
+  const userNameEl = document.getElementById('userName');
+  if (window._intakeName) {
+    const loc = window._retirementLocation || 'Spain';
+    if (nameEl) nameEl.textContent = window._intakeName;
+    if (subEl) subEl.textContent = window._intakeName + ' · → ' + loc;
+    if (userNameEl) userNameEl.textContent = window._intakeName;
+    const fb = document.getElementById('userAvatarFallback');
+    if (fb && fb.tagName === 'SPAN') fb.textContent = window._intakeName[0].toUpperCase();
+    // Update location nav label
+    const locNav = document.getElementById('locationNavLabel');
+    if (locNav) locNav.textContent = loc + ' Property';
+  }
+})();
+async function redoIntake(){
+  if(!confirm('Re-run setup? This lets you update your details and add or remove properties. Your current data stays until you finish and save the new setup.')) return;
+  const m=document.getElementById('userMenu'); if(m) m.style.display='none';
+  // Best-effort: flip intake_completed so the wizard runs; navigate no matter what.
+  try{
+    if(typeof sbClient!=='undefined' && sbClient && typeof currentUser!=='undefined' && currentUser){
+      await sbClient.from('user_profiles').update({intake_completed:false}).eq('id',currentUser.id);
+    }
+  }catch(e){ console.warn('redo intake flag:', e && e.message); }
+  window.location.href='/intake.html';
+}
+
+function changeCountry(){
+  const sel = document.getElementById('destCountry');
+  if(!sel) return;
+  const loc = sel.value;
+  window._retirementLocation = loc;
+  // Auto-fill the monthly budget for this country (user can still override after)
+  const budget = COUNTRY_BUDGETS[loc];
+  if(budget){
+    const bf = document.getElementById('spainCost');
+    if(bf){ bf.value = budget; }
+  }
+  // Persist to Supabase (best-effort, non-blocking)
+  if(typeof sbClient!=='undefined' && sbClient && typeof currentUser!=='undefined' && currentUser){
+    try{
+      sbClient.from('user_settings').update({retirement_location:loc, spain_budget:budget}).eq('user_id',currentUser.id).then(()=>{}).catch(()=>{});
+    }catch(e){}
+  }
+  render();
+}
+
+function toggleUserMenu() {
+  const m = document.getElementById('userMenu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('userMenuWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const m = document.getElementById('userMenu');
+    if (m) m.style.display = 'none';
+  }
+});
+
+
+
+</script>
+</body>
+</html>

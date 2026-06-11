@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Signing you in...</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:-apple-system,sans-serif;background:#0d0f12;color:#f0f2f5;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px}
+.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,.1);border-top-color:#4f8ef7;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+p{font-size:14px;color:#8b919e}
+.err{color:#f87171;font-size:13px;text-align:center;max-width:400px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="spinner"></div>
+<p id="msg">Completing sign in...</p>
+<script>
+const { createClient } = supabase;
+// PKCE flow — must use same config as index.html
+const sb = createClient('https://wsasqxocibzxfzkaiucr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzYXNxeG9jaWJ6eGZ6a2FpdWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MTAzNzMsImV4cCI6MjA5NjI4NjM3M30.UYKM5KbV4oBXyQh0FDEduDPvO5tzLHS2DAh_ZKV_PcA', {
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true
+  }
+});
+
+async function finish() {
+  const msg = document.getElementById('msg');
+
+  // With PKCE, supabase-js automatically exchanges the code in the URL
+  // Just call getSession and it handles everything
+  const { data, error } = await sb.auth.getSession();
+
+  if (error || !data.session) {
+    // Try waiting for auth state change
+    msg.textContent = 'Processing authentication...';
+    const { data: { subscription } } = sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        subscription.unsubscribe();
+        await setupAndRedirect(session.user);
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        msg.textContent = 'Sign in failed. Redirecting...';
+        setTimeout(() => window.location.href = '/index.html', 2000);
+      }
+    });
+    return;
+  }
+
+  await setupAndRedirect(data.session.user);
+}
+
+async function setupAndRedirect(user) {
+  const msg = document.getElementById('msg');
+  msg.textContent = 'Setting up your account...';
+
+  // Check allowlist
+  const { data: allowed } = await sb.from('allowed_users')
+    .select('is_admin').eq('email', user.email).single();
+
+  if (!allowed) {
+    await sb.auth.signOut();
+    window.location.href = '/index.html';
+    return;
+  }
+
+  // Upsert profile
+  await sb.from('user_profiles').upsert({
+    id: user.id,
+    email: user.email,
+    full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+    intake_completed: allowed.is_admin ? true : false,
+    is_admin: allowed.is_admin
+  }, { onConflict: 'id' });
+
+  // Upsert default settings for admin
+  if (allowed.is_admin) {
+    await sb.from('user_settings').upsert({
+      user_id: user.id, retire_age: 57, current_salary: 195000,
+      cash_balance: 175000, k401_balance: 550000, ss_base_67: 3806,
+      mgr_fee: 9, app_rate: 3.5, rent_growth: 3, months_rented: 11,
+      spain_budget: 4500, spain_inflation: 2.5, ss_draw_age: 67, rate_401k: 7
+    }, { onConflict: 'user_id' });
+    msg.textContent = 'Welcome back, Jas!';
+    setTimeout(() => window.location.href = '/app.html', 500);
+  } else {
+    // Check if intake done
+    const { data: profile } = await sb.from('user_profiles')
+      .select('intake_completed').eq('id', user.id).single();
+    setTimeout(() => {
+      window.location.href = (!profile?.intake_completed) ? '/intake.html' : '/app.html';
+    }, 500);
+  }
+}
+
+finish();
+</script>
+</body>
+</html>

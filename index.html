@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retire Abroad — Personal Early Retirement Planner</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0c10;color:#f0f2f5}
+
+/* Full bleed photo background */
+.bg{position:fixed;inset:0;z-index:0}
+.bg img{width:100%;height:100%;object-fit:cover;object-position:center 60%}
+.bg::after{content:'';position:absolute;inset:0;background:linear-gradient(
+  135deg,
+  rgba(5,8,15,.92) 0%,
+  rgba(5,8,15,.75) 40%,
+  rgba(5,8,15,.45) 70%,
+  rgba(5,8,15,.6) 100%
+)}
+
+/* Layout */
+.shell{position:relative;z-index:1;min-height:100vh;display:grid;grid-template-columns:1fr 400px;grid-template-rows:1fr}
+
+/* Left — story side */
+.left{display:flex;flex-direction:column;justify-content:space-between;padding:40px 56px}
+
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1a2744,#0d1829);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.15)}
+.logo-mark svg{display:block}
+.logo-name{font-size:14px;font-weight:600;color:rgba(255,255,255,.9);letter-spacing:-.01em}
+
+.story{max-width:520px}
+.story-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:5px 13px;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);letter-spacing:.04em;text-transform:uppercase;margin-bottom:22px}
+.story-tag::before{content:'';width:5px;height:5px;background:#2dd4bf;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+h1{font-size:58px;font-weight:800;line-height:1.05;letter-spacing:-.03em;color:#fff;margin-bottom:20px;text-shadow:0 2px 40px rgba(0,0,0,.4)}
+h1 em{font-style:normal;color:#2dd4bf}
+
+.story-sub{font-size:17px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:36px;max-width:440px}
+
+/* Destination cards */
+.dest-row{display:flex;gap:10px;flex-wrap:wrap}
+.dest{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:99px;padding:7px 14px;font-size:13px;color:rgba(255,255,255,.8);font-weight:500}
+.dest .flag{font-size:16px}
+
+/* Photo credit */
+.photo-credit{font-size:10px;color:rgba(255,255,255,.25);margin-top:auto;padding-top:16px}
+
+/* Right — auth card */
+.right{display:flex;flex-direction:column;justify-content:center;padding:40px 36px;background:rgba(10,12,18,.85);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,.07)}
+
+/* Preview */
+.preview-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px}
+.preview-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:28px}
+.preview-person{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.preview-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4f8ef7,#2dd4bf);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+.preview-name{font-size:13px;font-weight:600;color:#f0f2f5}
+.preview-meta{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px}
+.prow{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.pkey{font-size:12px;color:rgba(255,255,255,.4)}
+.pval{font-size:12px;font-weight:600;font-family:monospace}
+.pval.g{color:#22c87a}.pval.b{color:#4f8ef7}.pval.t{color:#2dd4bf}.pval.a{color:#f59e0b}
+.preview-verdict{margin-top:12px;padding:10px 12px;background:rgba(34,200,122,.1);border:1px solid rgba(34,200,122,.2);border-radius:10px;font-size:12px;color:#22c87a;font-weight:500;text-align:center}
+
+/* Auth */
+.auth-title{font-size:20px;font-weight:700;color:#f0f2f5;margin-bottom:6px}
+.auth-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:22px;line-height:1.6}
+
+.btn-google{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;padding:14px 20px;background:#fff;color:#1a1a1a;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.btn-google:hover{background:#f0f0f0;transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,0,0,.5)}
+.btn-google:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+.access-note{display:flex;align-items:flex-start;gap:9px;margin-top:16px;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px}
+.access-note-text{font-size:11px;color:rgba(255,255,255,.35);line-height:1.6}
+.access-note-text strong{color:rgba(255,255,255,.55);display:block;margin-bottom:2px}
+
+.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171;padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none;line-height:1.5}
+
+.proc{display:none;flex-direction:column;align-items:center;gap:14px;padding:20px 0}
+.spinner{width:36px;height:36px;border:2px solid rgba(255,255,255,.1);border-top-color:#2dd4bf;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-msg{font-size:13px;color:rgba(255,255,255,.5);text-align:center}
+
+/* Mobile */
+@media(max-width:860px){
+  html,body{overflow:auto}
+  .shell{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:100vh}
+  .left{padding:36px 24px 28px;min-height:55vh}
+  h1{font-size:38px}
+  .story-sub{font-size:15px}
+  .right{padding:32px 24px;border-left:none;border-top:1px solid rgba(255,255,255,.07)}
+  .dest-row{display:none}
+}
+@media(max-width:480px){
+  .left{padding:28px 20px 24px;min-height:50vh}
+  h1{font-size:32px}
+  .right{padding:28px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- Background photo — Lisbon/Portugal, free from Unsplash -->
+<div class="bg">
+  <img src="https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=1800&q=80&auto=format&fit=crop"
+       alt="Portugal coast"
+       onerror="this.src='https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=1800&q=80&auto=format&fit=crop'">
+</div>
+
+<div class="shell">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="logo-row">
+      <div class="logo-mark">
+        <svg viewBox="0 0 34 34" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+          <text x="4" y="25" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="white">R</text>
+          <ellipse cx="26" cy="24" rx="5" ry="3" fill="#2dd4bf" transform="rotate(-35 26 24)"/>
+        </svg>
+      </div>
+      <div class="logo-name">Retire Abroad</div>
+    </div>
+
+    <div class="story">
+      <div class="story-tag">&#10022; Early retirement planner</div>
+      <h1>Your last day<br>of work is<br><em>closer than<br>you think.</em></h1>
+      <p class="story-sub">Model your properties, savings, and Social Security against real cost of living abroad. Know the exact year you can leave — and never guess again.</p>
+      <div class="dest-row">
+        <div class="dest"><span class="flag">🇵🇹</span>Lisbon</div>
+        <div class="dest"><span class="flag">🇪🇸</span>Valencia</div>
+        <div class="dest"><span class="flag">🇮🇹</span>Amalfi</div>
+        <div class="dest"><span class="flag">🇬🇷</span>Athens</div>
+        <div class="dest"><span class="flag">🇲🇽</span>Oaxaca</div>
+        <div class="dest"><span class="flag">🇹🇭</span>Chiang Mai</div>
+      </div>
+    </div>
+
+    <div class="photo-credit">Photo: Sintra, Portugal &nbsp;&middot;&nbsp; Unsplash</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div id="loginView">
+      <div class="preview-label">Sample projection</div>
+      <div class="preview-card">
+        <div class="preview-person">
+          <div class="preview-avatar">J</div>
+          <div>
+            <div class="preview-name">Jordan, 34</div>
+            <div class="preview-meta">Denver, CO &nbsp;&middot;&nbsp; Retiring to Portugal</div>
+          </div>
+        </div>
+        <div class="prow"><span class="pkey">Current savings</span><span class="pval b">$18k cash &middot; $64k 401k</span></div>
+        <div class="prow"><span class="pkey">Rental property</span><span class="pval a">$50k equity</span></div>
+        <div class="prow"><span class="pkey">Projected retire age</span><span class="pval t">55</span></div>
+        <div class="prow"><span class="pkey">Net worth at retirement</span><span class="pval b">$680k</span></div>
+        <div class="prow"><span class="pkey">Monthly surplus abroad</span><span class="pval g">+$420/mo</span></div>
+        <div class="preview-verdict">&#9989; Bags packed by 2047 &nbsp;&middot;&nbsp; 21 years away</div>
+      </div>
+
+      <div class="auth-title">Sign in to build yours</div>
+      <p class="auth-sub">Takes 4 minutes to set up. Your numbers, your plan, saved every session.</p>
+
+      <div class="error" id="error"></div>
+      <button class="btn-google" id="signInBtn" onclick="signIn()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="access-note">
+        <span style="font-size:15px">&#128274;</span>
+        <div class="access-note-text">
+          <strong>By invitation only</strong>
+          If you were invited by Jas, your Google account will be recognized automatically.
+        </div>
+      </div>
+    </div>
+
+    <div class="proc" id="proc">
+      <div class="spinner"></div>
+      <div class="proc-msg" id="procMsg">Signing you in...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://wsasqxocibzxfzkaiucr.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzYXNxeG9jaWJ6eGZ6a2FpdWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MTAzNzMsImV4cCI6MjA5NjI4NjM3M30.UYKM5KbV4oBXyQh0FDEduDPvO5tzLHS2DAh_ZKV_PcA';
+const {createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{flowType:'implicit',detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});
+
+function showProc(msg){
+  document.getElementById('loginView').style.display='none';
+  document.getElementById('proc').style.display='flex';
+  document.getElementById('procMsg').textContent=msg||'Signing you in...';
+}
+function showErr(msg){
+  document.getElementById('loginView').style.display='block';
+  document.getElementById('proc').style.display='none';
+  const el=document.getElementById('error');
+  el.textContent=msg;el.style.display='block';
+  document.getElementById('signInBtn').disabled=false;
+}
+
+async function signIn(){
+  document.getElementById('signInBtn').disabled=true;
+  document.getElementById('error').style.display='none';
+  const {error}=await sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo:'https://retire.waggster.com/index.html'}
+  });
+  if(error)showErr(error.message);
+}
+
+// Helper: wrap any promise with a timeout so we can never hang forever
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout: '+label)), ms))
+  ]);
+}
+
+let _redirecting = false;
+async function setupAndRedirect(user){
+  if(_redirecting) return;            // guard against double-invocation (onAuthStateChange + getSession)
+  _redirecting = true;
+  showProc('Checking access...');
+  try {
+    // 1) Access check — use maybeSingle (returns null instead of throwing on 0 rows), with timeout
+    const {data:allowed, error:aerr} = await withTimeout(
+      sb.from('allowed_users').select('is_admin').eq('email',user.email).maybeSingle(),
+      8000, 'access check'
+    );
+    if(aerr) throw aerr;
+    if(!allowed){
+      await sb.auth.signOut();
+      showErr('Your email is not on the access list. Contact Jas to request access.');
+      _redirecting = false;
+      return;
+    }
+
+    // 2) Ensure a profile row exists (do not overwrite an existing name)
+    showProc('Setting up your account...');
+    await withTimeout(
+      sb.from('user_profiles').upsert({
+        id:user.id, email:user.email,
+        full_name:user.user_metadata?.full_name || user.email.split('@')[0],
+        is_admin:allowed.is_admin
+      },{onConflict:'id', ignoreDuplicates:false}),
+      8000, 'profile upsert'
+    ).catch(e=>console.warn('profile upsert skipped:', e.message));
+
+    // 3) Decide destination. Admins go straight to app; everyone else by intake status.
+    showProc('Loading your dashboard...');
+    // Admin is just a permission (admin panel access) — everyone, admin included,
+    // routes by whether they've completed intake. This keeps your own data/properties.
+    let goTo = '/intake.html';
+    try {
+      const {data:profile} = await withTimeout(
+        sb.from('user_profiles').select('intake_completed').eq('id',user.id).maybeSingle(),
+        8000, 'intake status'
+      );
+      goTo = (profile && profile.intake_completed) ? '/app.html' : '/intake.html';
+    } catch(e){
+      console.warn('intake status check failed, defaulting to intake:', e.message);
+      goTo = '/intake.html';
+    }
+    window.location.href = goTo;
+  } catch(err){
+    // Never leave the user stuck on a spinner — show a real message + retry
+    console.error('setupAndRedirect error:', err);
+    _redirecting = false;
+    showErr('Could not verify access (' + (err.message||'network error') + '). Please refresh to try again.');
+  }
+}
+
+sb.auth.onAuthStateChange(async(event,session)=>{
+  if(event==='SIGNED_IN'&&session?.user)await setupAndRedirect(session.user);
+});
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user){showProc('Already signed in...');await setupAndRedirect(session.user);}
+})();
+</script>
+</body>
+</html>
