@@ -95,7 +95,7 @@ h1{font-size:26px;font-weight:700;margin-bottom:8px}
     <div class="card">
       <div class="card-title">Personal Details</div>
       <div class="row2">
-        <div class="field"><label>Your first name</label><input type="text" id="s1_name" placeholder="Your first name"></div>
+        <div class="field"><label>Your name</label><input type="text" id="s1_name" placeholder="Your name"></div>
         <div class="field"><label>Current age</label><input type="number" id="s1_age" placeholder="e.g. 40" min="25" max="65"></div>
       </div>
       <div class="row2">
@@ -212,12 +212,6 @@ async function init(){
 }
 init();
 
-// Keep the Review Your Details panel live as the user edits values on the final step.
-['s1_name','s1_age','s1_salary','s1_retire','s2_cash','s2_401k','s4_budget','s4_inflation'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('input',refreshSummaryIfVisible);
-});
-
 function showStep(n){
   document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('active',i===n));
   ['p0','p1','p2','p3'].forEach((id,i)=>{
@@ -228,33 +222,19 @@ function showStep(n){
   });
   document.getElementById('stepTitle').textContent=titles[n];
   document.getElementById('stepSub').textContent=subs[n];
+  if(n===3)buildSummary();
   step=n;
-  if(n===3){ensureRetirementDefaults();buildSummary();}
   window.scrollTo(0,0);
 }
 function nextStep(){if(step<3)showStep(step+1);}
 function prevStep(){if(step>0)showStep(step-1);}
 
-const DEFAULT_BUDGETS={Spain:4000,Portugal:3500,Italy:4000,Mexico:2500,Thailand:2000,Greece:3000,Colombia:2200,USA:6000};
-
-function ensureRetirementDefaults(){
-  const budgetEl=document.getElementById('s4_budget');
-  const inflationEl=document.getElementById('s4_inflation');
-  if(budgetEl && !budgetEl.value) budgetEl.value=DEFAULT_BUDGETS[retLoc]||4000;
-  if(inflationEl && !inflationEl.value) inflationEl.value=2.5;
-}
-
-function refreshSummaryIfVisible(){
-  if(step===3) buildSummary();
-}
-
 function setLoc(loc,btn){
   retLoc=loc;
   document.querySelectorAll('.loc-btn').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  const budgetEl=document.getElementById('s4_budget');
-  if(budgetEl)budgetEl.value=DEFAULT_BUDGETS[loc]||4000;
-  refreshSummaryIfVisible();
+  btn.classList.add('active');
+  const budgets={Spain:4000,Portugal:3500,Italy:4000,Mexico:2500,Thailand:2000,Greece:3000,Colombia:2200,USA:6000};
+  document.getElementById('s4_budget').value=budgets[loc]||4000;
 }
 
 // ── Property management ───────────────────────────────────────────────────
@@ -444,7 +424,6 @@ function applyEst(id){
 }
 
 function buildSummary(){
-  ensureRetirementDefaults();
   const name=document.getElementById('s1_name').value||'You';
   const age=document.getElementById('s1_age').value;
   const salary=+document.getElementById('s1_salary').value;

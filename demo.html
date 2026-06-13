@@ -32,7 +32,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .sb.col .ni-lb{opacity:0;width:0;overflow:hidden}
 .sb-ft{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);line-height:1.6;transition:opacity .2s}
 .sb.col .sb-ft{opacity:0;pointer-events:none}
-.cb{position:absolute;top:14px;right:-13px;width:28px;height:28px;border-radius:50%;background:var(--accent,#4f8ef7);border:2px solid var(--bg,#0d0f12);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;z-index:20;transition:transform .25s;box-shadow:0 2px 8px rgba(0,0,0,.4)}.cb:hover{filter:brightness(1.15)}
+.cb{position:absolute;top:18px;right:-1px;width:22px;height:46px;border-radius:0 10px 10px 0;background:var(--accent,#4f8ef7);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;z-index:20;transition:all .2s;box-shadow:2px 0 8px rgba(0,0,0,.35)}
+.cb:hover{width:26px;filter:brightness(1.12)}
+.cb:active{transform:scale(.94)}
+/* When sidebar collapsed, the tab flips to point right and sits at the rail edge */
+.sb.col .cb{border-radius:0 10px 10px 0}
 .sb.col .cb{transform:rotate(180deg)}
 .cnt{flex:1;padding:18px 22px;overflow-y:auto;min-width:0}
 .cbar{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:16px}
@@ -637,7 +641,7 @@ const DEVIN={balance:0,rate:0,piPayment:0,totalPayment:0,currentValue:0,grossRen
 let TV='all',CH={},sbCol=false,mobOpen=false,buySpain=false;
 const LP={eliot:[],devin:[]};let pdId=0;
 
-function toggleSB(){sbCol=!sbCol;document.getElementById('sb').classList.toggle('col',sbCol);save();}
+function toggleSB(){sbCol=!sbCol;document.getElementById('sb').classList.toggle('col',sbCol);const cb=document.querySelector('.cb');if(cb)cb.innerHTML=sbCol?'&#9654;':'&#9664;';save();}
 function toggleMob(){mobOpen=!mobOpen;document.getElementById('sb').classList.toggle('mob-open',mobOpen);document.getElementById('sbov').style.display=mobOpen?'block':'none';}
 function nav(name,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -659,7 +663,7 @@ const tc=()=>isDark()?'#555d6b':'#9ca3af';
 const scOpts=()=>({x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:fmtAx,color:tc(),maxTicksLimit:6},grid:{color:gc()}}});
 
 function save(){scheduleAutoSave();try{localStorage.setItem('rts3',JSON.stringify({ra:gv('retireAge'),r4:gv('rate401k'),ss:gv('ssAge'),ap:gv('appRate'),rg:gv('rentGrowth'),mf:gv('mgrFee'),mo:gv('moRented'),sp:gv('spainCost'),si:gv('spainInflation'),sal:gv('curSalary'),cc:gv('curCash'),c4:gv('cur401k'),theme:document.documentElement.getAttribute('data-theme'),col:sbCol,bs:buySpain}));}catch(e){}}
-function load(){try{const s=JSON.parse(localStorage.getItem('rts3')||'{}');['ra','r4','ss','ap','rg','mf','mo','sp','si','sal','cc','c4'].forEach(k=>{const ids={ra:'retireAge',r4:'rate401k',ss:'ssAge',ap:'appRate',rg:'rentGrowth',mf:'mgrFee',mo:'moRented',sp:'spainCost',si:'spainInflation',sal:'curSalary',cc:'curCash',c4:'cur401k'};if(s[k])sv(ids[k],s[k]);});if(s.theme){document.documentElement.setAttribute('data-theme',s.theme);document.getElementById('themeBtn').textContent=s.theme==='dark'?'\u{1F319}':'\u2600\uFE0F';}if(s.col){sbCol=true;document.getElementById('sb').classList.add('col');}if(s.bs)toggleBuySpain();}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('rts3')||'{}');['ra','r4','ss','ap','rg','mf','mo','sp','si','sal','cc','c4'].forEach(k=>{const ids={ra:'retireAge',r4:'rate401k',ss:'ssAge',ap:'appRate',rg:'rentGrowth',mf:'mgrFee',mo:'moRented',sp:'spainCost',si:'spainInflation',sal:'curSalary',cc:'curCash',c4:'cur401k'};if(s[k])sv(ids[k],s[k]);});if(s.theme){document.documentElement.setAttribute('data-theme',s.theme);document.getElementById('themeBtn').textContent=s.theme==='dark'?'\u{1F319}':'\u2600\uFE0F';}if(s.col){sbCol=true;document.getElementById('sb').classList.add('col');const cb=document.querySelector('.cb');if(cb)cb.innerHTML='&#9654;';}if(s.bs)toggleBuySpain();}catch(e){}}
 function gv(id){const el=document.getElementById(id);return el?el.value:'';}
 function sv(id,v){const el=document.getElementById(id);if(el)el.value=v;}
 function getP(){return{retireAge:+gv('retireAge')||57,rate401k:(+gv('rate401k')||7)/100,ssAge:+gv('ssAge')||0,appRate:(+gv('appRate')||3.5)/100,rentGrowth:(+gv('rentGrowth')||3)/100,mgrFee:(+gv('mgrFee')||9)/100,moRented:(+gv('moRented')||11)/12,spainCost:+gv('spainCost')||4500,spainInflation:(+gv('spainInflation')||2.5)/100,curSalary:+gv('curSalary')||100000,curCash:+gv('curCash')||18000,cur401k:+gv('cur401k')||64000,eliotLumps:getLM('eliot'),devinLumps:getLM('devin')};}
@@ -891,7 +895,7 @@ function render(){
   mC('cmpInc',{type:'line',data:{labels:incY.map(r=>r.yr),datasets:cData.map((s,i)=>({label:'Retire '+s.age,data:incY.map(yr=>{const row=s.rows.find(r=>r.yr===yr.yr);return row&&row.ret?Math.round(row.totalMo):0;}),borderColor:cColors[i],borderWidth:2,pointRadius:0,fill:false}))},options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc(),maxTicksLimit:10,autoSkip:true},grid:{color:gc()}},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),color:tc()},grid:{color:gc()}}}}});
   // Milestones
   const ms=[];
-  ms.push({yr:ry,color:'#4f8ef7',title:'Retirement - Move to Spain',sub:'Age '+p.retireAge+' - Both properties now generating rental income',income:rr.totalMo});
+  ms.push({yr:ry,color:'#4f8ef7',title:'Retirement - Move to '+(window._retirementLocation||'Spain'),sub:'Age '+p.retireAge+' - Both properties now generating rental income',income:rr.totalMo});
   const eliotPO=rows.find((r,i)=>i>0&&r.eBal<1&&rows[i-1].eBal>=1);
   if(eliotPO)ms.push({yr:eliotPO.yr,color:'#22c87a',title:(window.ELIOT_OVERRIDE||ELIOT).nickname+' fully paid off',sub:'Property now 100% cash flow - no mortgage. +$'+Math.round((window.ELIOT_OVERRIDE||ELIOT).piPayment).toLocaleString()+'/mo boost',income:eliotPO.totalMo});
   const ssBeg=rows.find(r=>r.ssOn&&!rows.find(rr2=>rr2.yr<r.yr&&rr2.ssOn));
